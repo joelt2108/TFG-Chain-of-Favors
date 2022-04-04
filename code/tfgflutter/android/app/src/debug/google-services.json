@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "113656626152",
+    "project_id": "tfg-cadena",
+    "storage_bucket": "tfg-cadena.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:113656626152:android:8559b668e4e8bf4556c25d",
+        "android_client_info": {
+          "package_name": "com.example.tfgflutter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "113656626152-id25lp5rd0j5d5ko489t192lik2ekcpk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA09rZLlte1dHUwi5vKg8UhDU2UGJNhzIw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "113656626152-id25lp5rd0j5d5ko489t192lik2ekcpk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
