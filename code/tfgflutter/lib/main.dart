@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tfgflutter/src/home.dart';
 import 'src/login.dart';
 import 'src/register.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
       routes: {
         'log':(BuildContext context) => LoginPage(),
         'registro':(BuildContext context) => RegistroPage(),
-        //'home': (BuildContext context) => Home(),
+        'home': (BuildContext context) => HomePage(),
 
       },
       theme: ThemeData(

@@ -1,37 +1,30 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tfgflutter/src/provider/user_provider.dart';
 import 'controller/userdata.dart' as ud;
 import 'package:tfgflutter/main.dart';
-import 'dataregister.dart';
-import 'package:tfgflutter/src/provider/user_provider.dart';
 
-import 'login.dart';
 import 'model/user_model.dart';
 
 
 
-
-class RegistroPage extends StatefulWidget {
+class RegistroUserPage extends StatefulWidget {
   final String title = 'Registration';
 
 
+
   @override
-  State<StatefulWidget> createState() =>
-      _RegisterEmailSectionState();
+  _RegistroUserPage createState() => _RegistroUserPage();
 }
-class _RegisterEmailSectionState extends State<RegistroPage> {
+class _RegistroUserPage extends State<RegistroUserPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _apellidoController = TextEditingController();
   final TextEditingController _poblacionController = TextEditingController();
   final TextEditingController _dniController = TextEditingController();
   final TextEditingController _nuserController = TextEditingController();
+  final TextEditingController _nombreController = TextEditingController();
   Usuario usuario=new Usuario();
-  bool _saved=false;
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _saved = false;
   bool _success;
   String _userEmail;
   @override
@@ -89,31 +82,9 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                             ),
                                             controller: _nombreController,
                                             onChanged: (value) => usuario.Nombre = value,
-
                                             validator: (String value) {
                                               if (value.isEmpty) {
                                                 return ;
-                                              }
-                                              return null;
-                                            },
-                                          ),
-                                          Text("Email"),
-                                          TextFormField(
-                                            decoration: InputDecoration(
-                                            ),
-                                            controller: _emailController,
-                                            validator: (String value) {
-                                              return null;
-                                            },
-                                          ),
-                                          Text("Contraseña"),
-                                          TextFormField(
-                                            obscureText: true,
-                                            controller: _passwordController,
-                                            decoration: InputDecoration(
-                                            ),
-                                            validator: (String value) {
-                                              if (value.isEmpty) {
                                               }
                                               return null;
                                             },
@@ -169,7 +140,7 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                                   _register();
                                                 }
                                               },
-                                              child:  Text("Siguiente"),
+                                              child:  Text("Finalizar registro"),
                                             ),
                                           ),
 
@@ -196,57 +167,17 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                 ])));
 
   }
-  void _register() async {
-    try {
-      final User user = (await
-      _auth.createUserWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
-      )
-      ).user;
-      if (user != null) {
-        setState(() async {
-          _success = true;
-          ud.DataUser datosuser = ud.DataUser();
-
-          _userEmail = user.email;
-          final token = await user.getIdToken();
-          datosuser.token = token.toString();
-          datosuser.email=_emailController.text;
-          datosuser.refreshtoken=user.refreshToken;
-          datosuser.name=_nombreController.text;
-          _success = true;
-          _userEmail = user.email;
-          usuario.id=datosuser.email;
-          Usuario_Provider upr = new Usuario_Provider();
-          upr.saveUsuario(usuario);
+  void _register() async{
+    ud.DataUser datosuser = ud.DataUser();
+    usuario.id=datosuser.email;
+    Usuario_Provider upr = new Usuario_Provider();
+    upr.saveUsuario(usuario);
 
 
-          setState(() {
-            _saved = true;
-          });
-          Navigator.of(context)
-              .push(MaterialPageRoute<void>(
-            builder: (context) => LoginPage(),
-          )).then( (var value) {
-          });
-
-        });
-
-        setState(() {
-          _success = true;
-        });
-      }
-    } on FirebaseAuthException catch  (e) {
-      if (e.code == 'invalid-email') {
-        Text("Formato invalido");
-        // Do something :D
-      }else{
-        Text("Ha ocurrido un error");
-      }
-    }
-
-
+    setState(() {
+      _saved = true;
+    });
+    Navigator.pushReplacementNamed(context, 'log');
   }
   Widget _crearFondo(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -282,7 +213,7 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
           child: Column(
             children: <Widget>[
               SizedBox(height: 10.0, width: double.infinity),
-              Text('Registro',
+              Text('Rellene los campos, por favor:',
                   style: TextStyle(color: Colors.white, fontSize: 25.0))
             ],
           ),
@@ -321,14 +252,4 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
     setState(() {});
   }
 
-  void _validateRegister(){
-    Navigator.of(context)
-        .push(MaterialPageRoute<void>(
-      builder: (context) => RegistroUserPage(),
-    )).then( (var value) {
-      setState(() => {
-        _refresh()
-      });
-    });
-  }
 }
