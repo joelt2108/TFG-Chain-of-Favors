@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:tfgflutter/src/provider/solicitud_provider.dart';
 import 'package:tfgflutter/src/solicitud.dart';
 import 'dart:async';
+import 'controller/userdata.dart' as ud;
+import 'home.dart';
 
-import 'misanuncios.dart';
 
 
-
-class HomePage extends StatelessWidget {
+class MisAnuncios extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -18,30 +18,32 @@ class HomePage extends StatelessWidget {
 
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Tablón de Anuncios'),
+      home: MisAnunciosPage(title: 'Tablón de Anuncios'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+class MisAnunciosPage extends StatefulWidget {
+  MisAnunciosPage({Key key, this.title}) : super(key: key);
 
   final String title;
   Timer _timer;
 
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _MisAnunciosPageState createState() => _MisAnunciosPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MisAnunciosPageState extends State<MisAnunciosPage> {
   Solicitud_Provider solicitud_provider= new Solicitud_Provider();
   Icon customIcon = const Icon(Icons.search);
-  Widget customSearchBar = const Text('Tablón de anuncios');
+  Widget customSearchBar = const Text('Mis Anuncios');
   //final duplicateItems = List<String>.generate(10000, (i) => "Item $i");
   TextEditingController editingController = TextEditingController();
   var items = List<String>();
   Stream<QuerySnapshot> SolicitudesCargadas;
+  ud.DataUser datosuser=ud.DataUser();
+
 
 
   void _incrementCounter() {
@@ -52,15 +54,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _refresh() async {
-    SolicitudesCargadas = solicitud_provider.cargarSolicitudes();
     setState(() {});
+    SolicitudesCargadas=solicitud_provider.cargarMisAnuncios(datosuser.email);
+
 
   }
 
 
   void initState() {
     super.initState();
-    SolicitudesCargadas = solicitud_provider.cargarSolicitudes();
+
+    SolicitudesCargadas=solicitud_provider.cargarMisAnuncios(datosuser.email);
 
   }
   @override
@@ -77,49 +81,8 @@ class _MyHomePageState extends State<MyHomePage> {
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: customSearchBar,
-          //automaticallyImplyLeading: false,
-        actions: [
-          IconButton(onPressed:(){
-            setState(() {
-            if (customIcon.icon == Icons.search) {
-              // Perform set of instructions.
-              customIcon = const Icon(Icons.cancel);
-              customSearchBar =  ListTile(
-              leading: Icon(
-              Icons.search,
-              color: Colors.white,
-              size: 28,
-              ),
-              title: TextField(
-                onChanged: (value) => SolicitudesBusqueda(value) ,
-                controller: editingController,
-                decoration: InputDecoration(
-              hintText: 'introduce tu búsqueda...',
+        //automaticallyImplyLeading: false,
 
-              hintStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontStyle: FontStyle.italic,
-              ),
-
-              border: InputBorder.none,
-              ),
-              style: TextStyle(
-              color: Colors.white,
-              ),
-              ),
-              );
-            } else {
-              _refresh();
-            customIcon = const Icon(Icons.search);
-            customSearchBar = const Text('Tablón de anuncios');
-
-            }
-    });
-
-
-          }, icon: customIcon),
-        ],
       ),
 
       drawer: Drawer(
@@ -196,28 +159,28 @@ class _MyHomePageState extends State<MyHomePage> {
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: Column(
-          children: <Widget>[
-            Flexible(
-              fit: FlexFit.tight,
-              child: StreamBuilder(
-                stream: SolicitudesCargadas,
-                builder:
-                    (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                  if (snapshot.hasData) {
-                    return ListView.builder(
-                      itemCount: snapshot.data.docs.length,
-                      itemBuilder: (context, i) => _cargarDatos(context, snapshot.data.docs[i]),
-                    );
-                  } else {
-                    return Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                },
-              ),
+            children: <Widget>[
+              Flexible(
+                fit: FlexFit.tight,
+                child: StreamBuilder(
+                  stream: SolicitudesCargadas,
+                  builder:
+                      (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                    if (snapshot.hasData) {
+                      return ListView.builder(
+                        itemCount: snapshot.data.docs.length,
+                        itemBuilder: (context, i) => _cargarDatos(context, snapshot.data.docs[i]),
+                      );
+                    } else {
+                      return Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                  },
+                ),
 
-            ),
-          ]
+              ),
+            ]
           // Column is also layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
           // children horizontally, and tries to be as tall as its parent.
@@ -293,14 +256,14 @@ class _MyHomePageState extends State<MyHomePage> {
                           Container(
                               margin: const EdgeInsets.only(left: 20.0),
                               child:Text('${solicitud.get('Descripcion')}',
-                                style: TextStyle(
+                                  style: TextStyle(
                                     fontSize:18.0,)
-                                    //fontWeight: FontWeight.bold),
+                                //fontWeight: FontWeight.bold),
                               )
                           ),
                           Container(
-                              margin: const EdgeInsets.only(left: 20.0),
-                              //child:Text(tipoC)
+                            margin: const EdgeInsets.only(left: 20.0),
+                            //child:Text(tipoC)
                           ),
                           Padding(
                               padding: const EdgeInsets.all(1.0)
@@ -331,9 +294,11 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
   }
-  SolicitudesBusqueda(String query){
-    SolicitudesCargadas = solicitud_provider.cargarSolicitudesSearch(query);
-    setState(() {});
+  cargarMisAnuncios(){
+    //ud.DataUser datosuser = ud.DataUser();
+
+    SolicitudesCargadas = solicitud_provider.cargarMisAnuncios(datosuser.email);
+
     //selectedReportList.clear();
     //selectedReportListPreferencias.clear();
     //Navigator.of(context).pop();

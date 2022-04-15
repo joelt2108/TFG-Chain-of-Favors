@@ -160,7 +160,7 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
 
   void _uploadSolicitud () async
   {
-
+    _rellenarItems();
     ud.DataUser datosuser = ud.DataUser();
 
     Solicitud_Provider pr = new Solicitud_Provider();
@@ -170,6 +170,7 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
  
     solicitud.NUser=listaFinal[0].get("NUser").toString();
     solicitud.Poblacion=listaFinal[0].get("Poblacion").toString();
+    solicitud.Search=parametersSearch(solicitud.Titulo);
 
 
     pr.saveSolicitud(solicitud);
@@ -215,5 +216,15 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
       listaFinal = lista;
     });
     return lista;
+  }
+
+  parametersSearch(String sol) {
+    List<String> caseSearchList = List();
+    String temp = "";
+    for (int i = 0; i < sol.length; i++) {
+      temp = temp + sol[i];
+      caseSearchList.add(temp);
+    }
+    return caseSearchList;
   }
 }

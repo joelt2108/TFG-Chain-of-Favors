@@ -47,4 +47,21 @@ class Solicitud_Provider{
     });
     return lista;
   }
-}
+
+  Stream<QuerySnapshot> cargarSolicitudes() {
+    //return _db.collection("Solicitud").where("hide",isEqualTo: false).snapshots();
+    return _db.collection("Solicitud").snapshots();
+
+  }
+
+  Stream<QuerySnapshot> cargarSolicitudesSearch(String query) {
+
+      return _db.collection("Solicitud").where('Titulo', isGreaterThanOrEqualTo: query, isLessThan: query.substring(0, query.length-1) + String.fromCharCode(query.codeUnitAt(query.length - 1) + 1)).snapshots();
+  }
+
+  Stream<QuerySnapshot> cargarMisAnuncios(String id) {
+    //return _db.collection("Solicitud").where("hide",isEqualTo: false).snapshots();
+    return _db.collection("Solicitud").where('id',isEqualTo: id).snapshots();
+
+  }
+  }

@@ -15,7 +15,7 @@ class Solicitud {
     this.Poblacion = '',
     this.NUser = '',
     this.Puntos='',
-
+    this.Search,
   }
 
       );
@@ -26,6 +26,7 @@ class Solicitud {
   String Poblacion;
   String NUser;
   String Puntos;
+  List<String> Search;
 
 
   factory Solicitud.fromJson(Map<String, dynamic> json) => Solicitud(
@@ -35,6 +36,7 @@ class Solicitud {
     Poblacion: json["Poblacion"],
     NUser: json["NUser"],
     Puntos: json["Puntos"],
+    Search: json["Search"],
 
   );
 
@@ -45,6 +47,7 @@ class Solicitud {
     "Poblacion": Poblacion,
     "NUser": NUser,
     "Puntos": Puntos,
+    "Search": Search,
 
   };
 }
