@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:tfgflutter/src/detallesanuncio.dart';
 import 'controller/userdata.dart' as ud;
 import 'package:tfgflutter/main.dart';
 import 'package:tfgflutter/src/provider/user_provider.dart';
@@ -60,6 +61,7 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
     // than having to individually change instances of widgets.
     return Scaffold(
         appBar: AppBar(
+
           title: Row(
             children: [
               Container(
@@ -76,6 +78,7 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
         body:SingleChildScrollView(
 
             child:Container(
+
 
                 child:Form(child:
                 Column(
@@ -128,6 +131,7 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
                         padding: EdgeInsets.symmetric(horizontal: 8),
                     child:TextField(
                       controller: _puntosController,
+                      keyboardType: TextInputType.number,
                       onChanged: (value) => solicitud.Puntos = value,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(),
@@ -170,8 +174,10 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
  
     solicitud.NUser=listaFinal[0].get("NUser").toString();
     solicitud.Poblacion=listaFinal[0].get("Poblacion").toString();
+    solicitud.Estado="Sin asignar";
     solicitud.Search=parametersSearch(solicitud.Titulo);
-
+    solicitud.Image=listaFinal[0].get("Image").toString();
+    solicitud.Solicitantes=new List();
 
     pr.saveSolicitud(solicitud);
     Navigator.pop(context);
@@ -182,6 +188,8 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
     Stream<QuerySnapshot> usuario = await usuarioProvider.getUsuario(datosuser.email);
     Future<List> lista = recuperarNUser(usuario);
     final lista2 = await recuperarPoblacion(usuario);
+    final lista3 = await recuperarImagen(usuario);
+
     return lista;
   }
 
@@ -217,7 +225,22 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
     });
     return lista;
   }
-
+  Future<List> recuperarImagen(Stream<QuerySnapshot> usuario) async {
+    int i=1;
+    int j=0;
+    List<dynamic> lista = new List();
+    usuario.forEach((element) {
+      element.docs.asMap().forEach((key, value) {
+        lista.add(element.docs[key]);
+        print(element.docs[key]);
+        print("FUNCION"+lista.toString());
+      });
+      i++;
+      j++;
+      listaFinal = lista;
+    });
+    return lista;
+  }
   parametersSearch(String sol) {
     List<String> caseSearchList = List();
     String temp = "";
@@ -226,5 +249,16 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
       caseSearchList.add(temp);
     }
     return caseSearchList;
+  }
+}
+
+List<String> getSolicitantes(){
+  return solicitud.Solicitantes;
+}
+
+void setSolicitantes(List<String> sol){
+  solicitud.Solicitantes=sol;
+  for(int i=0; i<sol.length;i++){
+    solicitud.Solicitantes.add(sol[i]);
   }
 }

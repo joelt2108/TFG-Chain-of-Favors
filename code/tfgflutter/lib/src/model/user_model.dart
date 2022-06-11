@@ -16,6 +16,11 @@ class Usuario {
     this.NUser = '',
     this.Image='',
     this.DNI='',
+    this.NFavores=0,
+    this.Puntos=100,
+    this.Solicitudes,
+    this.Chats,
+    this.Cookies=false,
   }
 
   );
@@ -27,7 +32,11 @@ class Usuario {
   String NUser;
   String Poblacion;
   String DNI;
-
+  int NFavores;
+  int Puntos;
+  List<String> Solicitudes;
+  List<String> Chats;
+  bool Cookies;
   factory Usuario.fromJson(Map<String, dynamic> json) => Usuario(
     id: json["id"],
     Nombre: json["Nombre"],
@@ -36,6 +45,11 @@ class Usuario {
     NUser: json["NUser"],
     Image: json["Image"],
     DNI: json["DNI"],
+    NFavores: json["NFavores"],
+    Puntos: json["Puntos"],
+    Solicitudes: json["Solicitudes"],
+    Chats: json["Chats"],
+    Cookies: json["Cookies"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -46,5 +60,10 @@ class Usuario {
     "NUser": NUser,
     "Image": Image,
     "DNI": DNI,
+    "NFavores": NFavores,
+    "Puntos": Puntos,
+    "Solicitudes": Solicitudes,
+    "Chats": Chats,
+    "Cookies": Cookies,
   };
 }

@@ -16,6 +16,10 @@ class Solicitud {
     this.NUser = '',
     this.Puntos='',
     this.Search,
+    this.Image,
+    this.Estado='',
+    this.Solicitantes,
+    this.NSol='',
   }
 
       );
@@ -27,6 +31,10 @@ class Solicitud {
   String NUser;
   String Puntos;
   List<String> Search;
+  String Image;
+  String Estado;
+  List<String> Solicitantes;
+  String NSol;
 
 
   factory Solicitud.fromJson(Map<String, dynamic> json) => Solicitud(
@@ -37,6 +45,10 @@ class Solicitud {
     NUser: json["NUser"],
     Puntos: json["Puntos"],
     Search: json["Search"],
+    Image: json["Image"],
+    Estado: json["Estado"],
+    Solicitantes: json["Solicitantes"].cast<String>(),
+    NSol: json["NSol"],
 
   );
 
@@ -48,6 +60,12 @@ class Solicitud {
     "NUser": NUser,
     "Puntos": Puntos,
     "Search": Search,
+    "Image": Image,
+    "Estado": Estado,
+    "Solicitantes": Solicitantes,
+    "NSol": NSol,
 
   };
+
+
 }

@@ -4,14 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:tfgflutter/src/editaranuncio.dart';
 import 'package:tfgflutter/src/mianuncio.dart';
 import 'package:tfgflutter/src/provider/solicitud_provider.dart';
+import 'package:tfgflutter/src/provider/user_provider.dart';
 import 'package:tfgflutter/src/solicitud.dart';
 import 'dart:async';
+import 'chat.dart';
 import 'controller/userdata.dart' as ud;
 import 'home.dart';
+import 'misanuncios.dart';
 
 
 
-class MisAnuncios extends StatelessWidget {
+class ChatList extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -21,31 +24,32 @@ class MisAnuncios extends StatelessWidget {
 
         primarySwatch: Colors.blue,
       ),
-      home: MisAnunciosPage(title: 'Tablón de Anuncios'),
+      home: ChatListPage(title: 'Tablón de Anuncios'),
     );
   }
 }
 
-class MisAnunciosPage extends StatefulWidget {
-  MisAnunciosPage({Key key, this.title}) : super(key: key);
+class ChatListPage extends StatefulWidget {
+  ChatListPage({Key key, this.title}) : super(key: key);
 
   final String title;
   Timer _timer;
 
 
   @override
-  _MisAnunciosPageState createState() => _MisAnunciosPageState();
+  _ChatListPageState createState() => _ChatListPageState();
 }
 
-class _MisAnunciosPageState extends State<MisAnunciosPage> {
+class _ChatListPageState extends State<ChatListPage> {
   Solicitud_Provider solicitud_provider= new Solicitud_Provider();
   Icon customIcon = const Icon(Icons.search);
-  Widget customSearchBar = const Text('Mis Anuncios');
+  Widget customSearchBar = const Text('Mis Chats');
   //final duplicateItems = List<String>.generate(10000, (i) => "Item $i");
   TextEditingController editingController = TextEditingController();
   var items = List<String>();
   Stream<QuerySnapshot> SolicitudesCargadas;
   Stream<QuerySnapshot> SolicitantesCargados;
+  Usuario_Provider upro=new Usuario_Provider();
 
   ud.DataUser datosuser=ud.DataUser();
   String id;
@@ -172,7 +176,7 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
               Flexible(
                 fit: FlexFit.tight,
                 child: StreamBuilder(
-                  stream: SolicitudesCargadas,
+                  stream: upro.getUsersChat(datosuser.email),
                   builder:
                       (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                     if (snapshot.hasData) {
@@ -219,112 +223,108 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
 
 
   }
-  Widget _cargarDatos(BuildContext context, QueryDocumentSnapshot solicitud){
+  Widget _cargarDatos(BuildContext context, QueryDocumentSnapshot usuarios){
     return GestureDetector(
       key: UniqueKey(),
+
       child:
       Container(
+
           padding: const EdgeInsets.all(5.0),
-          child:Container(
+          child:
+          Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white70,
                 border: Border.all(
-                  color: Colors.lightBlue,
+                  color: Colors.blueGrey,
                 ),
                 borderRadius: BorderRadius.circular(10.0),
               ),
+
               child:Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
                   children: <Widget>[
+
                     Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
                       children: <Widget>[
                         Padding(
-                            padding: const EdgeInsets.all(4.0)
+                          padding: const EdgeInsets.all(15),
+
+                        ),
+
+
+                        Container(
+                          padding: const EdgeInsets.only(left: 10, bottom: 10),
+
+                          child:Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                            children: [
+
+
+                              FutureBuilder<String>(
+                                  future: upro.getImagen('${usuarios.get('Image')}'),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData) {
+                                      return CircleAvatar( radius: 20.0,
+                                          backgroundColor: Colors.transparent,
+                                          backgroundImage:(NetworkImage(snapshot.data.toString(),
+
+                                          )));
+                                    }
+                                    else {
+                                      return CircularProgressIndicator();
+                                    }
+                                  }
+                              ),
+                              Container(
+                                  margin: const EdgeInsets.only(left: 20.0),
+                                  child:Text('${usuarios.get('NUser')}',
+                                    style: TextStyle(
+                                        fontSize:18.0,
+                                        fontWeight: FontWeight.bold),
+                                  )
+                              ),
+                              Padding(
+                                  padding: const EdgeInsets.all(1.0)
+                              ),
+                              Container(
+                                  margin: const EdgeInsets.only(left: 20.0),
+                                  child:Text('${usuarios.get('Poblacion')}',
+                                      style: TextStyle(
+                                        fontSize:18.0,)
+                                    //fontWeight: FontWeight.bold),
+                                  )
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(right: 100.0),
+                              ),
+
+
+
+                            ],
+                          ),
+
+
+
+
                         ),
 
                       ],
                     ),
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Padding(
-                              padding: const EdgeInsets.all(12.0)
-                          ),
 
-
-
-                            Container(
-                                margin: const EdgeInsets.only(left: 20.0),
-                                child:Text('${solicitud.get('Titulo')}',
-                                  style: TextStyle(
-                                      fontSize:18.0,
-                                      fontWeight: FontWeight.bold),
-                                )
-                            ),
-                            //SizedBox(width: 1), // give it width
-
-
-
-
-
-                          Padding(
-                              padding: const EdgeInsets.all(1.0)
-                          ),
-                          Container(
-                              margin: const EdgeInsets.only(left: 20.0),
-                              child:Text('${solicitud.get('Descripcion')}',
-                                  style: TextStyle(
-                                    fontSize:18.0,)
-                                //fontWeight: FontWeight.bold),
-                              )
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(left: 20.0),
-                            //child:Text(tipoC)
-                          ),
-                          Padding(
-                              padding: const EdgeInsets.all(1.0)
-                          ),
-                          Container(
-                              margin: const EdgeInsets.only(left: 20.0),
-                              child:Text('${solicitud.get('Poblacion')}')
-                          ),
-                          Padding(
-                              padding: const EdgeInsets.all(1.0)
-                          ),
-                          Container(
-                              margin: const EdgeInsets.only(left: 20.0),
-                              child:Text('${solicitud.get('Puntos')}'+" Puntos")
-                          ),
-                          Padding(
-                              padding: const EdgeInsets.all(1.0)
-                          ),
-                          Row(children: [
-                            CupertinoButton(  padding: EdgeInsets.only(left:20),
-                                onPressed: (){
-                                  id=solicitud.id;
-                                  _navigateDetallesAnuncio(id);
-                                }, child: Icon(Icons.edit,color: Colors.grey,size: 20,)),
-                            //SizedBox(width: 1), // give it width
-
-                            CupertinoButton(
-                                onPressed: (){
-                                  id=solicitud.id;
-                                  solicitud_provider.eliminarAnuncio(id);
-                                  _refresh();
-                                }, child: Icon(Icons.delete,color: Colors.grey,size: 20,)),
-                          ],),
-                        ],
-                      ),
-                    )
                   ]
               ))
       ),
       onTap: () {
-        _navigateDetallesMiAnuncio(solicitud.id);
+        _navigateOpenChat(datosuser.email,usuarios.get("id"), usuarios.get("NUser"));
       },
     );
+
 
   }
   cargarMisAnuncios(){
@@ -363,6 +363,14 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
     });
   }
 
+  void _navigateOpenChat(String us1, String us2, String nuser){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => Chat(us1, us2, nuser),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
   void _navigateDetallesMiAnuncio(String email){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(

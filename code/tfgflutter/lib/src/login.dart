@@ -46,67 +46,97 @@ class _LoginSectionState extends State<LoginPage> {
                           Form(
                               key: _formKey,
                               child: Container(
+
                                 width: size.width * 0.85,
                                 margin: EdgeInsets.symmetric(vertical: 30.0),
                                 padding: EdgeInsets.symmetric(vertical: 50.0),
                                 decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    //color: Colors.yellow,
                                     borderRadius: BorderRadius.circular(5.0),
-                                    boxShadow: <BoxShadow>[
-                                      BoxShadow(
-                                          color: Colors.black26,
-                                          blurRadius: 3.0,
-                                          offset: Offset(0.0, 5.0),
-                                          spreadRadius: 3.0)
-                                    ]),
+                                   ),
                                 child: Column(
+
+
                                     children: <Widget>[
                                       Padding(
                                         padding: const EdgeInsets.all(2.0),
                                         child:
                                         Column(
+
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: <Widget>[
-                                            Text("Email"),
-                                            TextFormField(
-                                              controller: _emailController,
-                                              cursorColor: Colors.lightGreen,
-                                              decoration: InputDecoration(
 
-                                                  ),
+                                            Container(
+                                              color:Colors.white,
+                                              child:TextFormField(
+
+                                              controller: _emailController,
+                                              cursorColor: Colors.blue,
+                                                decoration: InputDecoration(
+                                                    border: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(1.0),
+                                                    ),
+                                                    filled: true,
+                                                    hintStyle: TextStyle(color: Colors.grey[800]),
+                                                    hintText: "Email",
+                                                    fillColor: Colors.white70),
                                               validator: (String value) {
                                                 if (value.isEmpty) {
                                                   return null;
                                                 }
                                                 return null;
                                               },
-                                            ),
-                                            Text( "Password"),
-                                            TextFormField(
-                                              obscureText: true,
-                                              controller: _passwordController,
-                                              cursorColor: Colors.lightGreen,
-                                              decoration: InputDecoration(
+                                            ) ,),
+                                            Padding(padding: EdgeInsets.all(10)),
 
-                                                 ),
-                                              validator: (String value) {
-                                                if (value.isEmpty) {
-                                                  return  null;
-                                                }
-                                                return null;
-                                              },
-                                            ),
+
                                             Container(
-                                              padding: const EdgeInsets.symmetric(vertical: 16.0),
-                                              alignment: Alignment.center,
-                                              child: RaisedButton(
-                                                onPressed: () async {
-                                                  if (_formKey.currentState.validate()) {
-                                                    _login();
+                                              color: Colors.white,
+                                              child:  TextFormField(
+                                                obscureText: true,
+                                                controller: _passwordController,
+                                                cursorColor: Colors.lightGreen,
+                                                decoration: InputDecoration(
+                                                  border: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(1.0),
+                                                  ),
+                                                    filled: true,
+                                                    hintStyle: TextStyle(color: Colors.grey[800]),
+                                                    hintText: "Contraseña",
+                                                    fillColor: Colors.white70),
+
+
+
+                                                validator: (String value) {
+
+                                                  if (value.isEmpty) {
+                                                    return  null;
                                                   }
+                                                  return null;
                                                 },
-                                                child:  Text("Iniciar Sesión"),
                                               ),
+                                            ),
+
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(vertical: 30.0),
+
+                                              alignment: Alignment.center,
+                                              child:
+                                              SizedBox(
+                                                width: 350.0,
+                                                height: 50.0,
+                                                child:  ElevatedButton(
+                                                  onPressed: () async {
+                                                    if (_formKey.currentState.validate()) {
+                                                      _login();
+                                                    }
+                                                  },
+                                                  child:  Text("Iniciar Sesión"),
+                                                ),
+                                              ),
+
+
+
                                             ),
 
                                             Container(
@@ -167,12 +197,14 @@ class _LoginSectionState extends State<LoginPage> {
     final size = MediaQuery.of(context).size;
 
     final fondoMorado = Container(
-      height: size.height * 0.4,
+      height: size.height ,
       width: double.infinity,
       decoration: BoxDecoration(
           gradient: LinearGradient(colors: <Color>[
-            Color.fromRGBO(63, 63, 156, 1.0),
-            Color.fromRGBO(90, 70, 178, 1.0)
+            //Color.fromRGBO(29, 23, 91, 1.0),
+            Colors.amberAccent,
+            Colors.blueGrey,
+
           ])),
     );
 
@@ -193,12 +225,12 @@ class _LoginSectionState extends State<LoginPage> {
         Positioned(bottom: 120.0, right: 20.0, child: circulo),
         Positioned(bottom: -50.0, left: -20.0, child: circulo),
         Container(
-          padding: EdgeInsets.only(top: 80.0),
+          padding: EdgeInsets.only(top: 70.0,right: 20),
           child: Column(
             children: <Widget>[
-              SizedBox(height: 10.0, width: double.infinity),
-              Text('Cadena de Favores',
-                  style: TextStyle(color: Colors.white, fontSize: 25.0))
+
+              Image.network("https://firebasestorage.googleapis.com/v0/b/tfg-cadena.appspot.com/o/biglogo.png?alt=media&token=5e788e35-c138-42b3-bf0a-40bf60e6a3f7"),
+
             ],
           ),
         )

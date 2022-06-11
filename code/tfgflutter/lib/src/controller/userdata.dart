@@ -36,6 +36,9 @@ class DataUser{
     // return prefs.getString('token') ?? '';
   }
 
+
+
+
   set name(String value) {
     prefs.setString('name', value);
   }

@@ -72,7 +72,6 @@ class _RegistroUserPage extends State<RegistroUserPage> {
                                 child: Column(
                                     children: <Widget>[
 
-
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: <Widget>[
@@ -169,6 +168,7 @@ class _RegistroUserPage extends State<RegistroUserPage> {
   }
   void _register() async{
     ud.DataUser datosuser = ud.DataUser();
+
     usuario.id=datosuser.email;
     Usuario_Provider upr = new Usuario_Provider();
     upr.saveUsuario(usuario);
