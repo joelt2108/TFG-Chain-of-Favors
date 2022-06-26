@@ -8,7 +8,10 @@ import 'package:tfgflutter/src/model/solicitud_model.dart';
 import 'package:tfgflutter/src/model/user_model.dart';
 import 'package:tfgflutter/src/provider/solicitud_provider.dart';
 import 'package:tfgflutter/src/provider/user_provider.dart';
+import 'package:tfgflutter/src/ranking.dart';
 import 'package:tfgflutter/src/solicitud.dart';
+import 'avisolegal.dart';
+import 'chatlist.dart';
 import 'controller/userdata.dart' as ud;
 
 import 'package:flutter/cupertino.dart';
@@ -16,31 +19,21 @@ import 'package:flutter/material.dart';
 
 import 'dart:async';
 
+import 'controller/userdata.dart';
 import 'home.dart';
 import 'miperfil.dart';
+import 'mis_solicitudes.dart';
 import 'misanuncios.dart';
 ud.DataUser datosuser = ud.DataUser();
 String dropdownvalue;
 String FirstValue='50';
+int mispuntos;
 
 
-class EditarPage extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
 
-        primarySwatch: Colors.blue,
-      ),
-      home: MiEditarPage(datosuser.email,title: 'Tablón de Anuncios'),
-    );
-  }
-}
 
-class MiEditarPage extends StatefulWidget {
-  MiEditarPage(this.email, {Key key, this.title}) : super(key: key);
+class EditarPage extends StatefulWidget {
+  EditarPage(this.email, {Key key, this.title}) : super(key: key);
 
   final String email;
   final String title;
@@ -51,10 +44,10 @@ class MiEditarPage extends StatefulWidget {
   _MiEditarPageState createState() => _MiEditarPageState();
 }
 
-class _MiEditarPageState extends State<MiEditarPage> {
+class _MiEditarPageState extends State<EditarPage> {
   Usuario_Provider usuario_provider = new Usuario_Provider();
   Icon customIcon = const Icon(Icons.search);
-  Widget customSearchBar = const Text('Mi Perfil');
+  Widget customSearchBar = const Text('Editar Favor');
   TextEditingController editingController = TextEditingController();
   var items = List<String>();
   Stream<QuerySnapshot> PerfilStream;
@@ -106,27 +99,56 @@ class _MiEditarPageState extends State<MiEditarPage> {
       drawer: Drawer(
         child: ListView(
           // Remove padding
-          padding: EdgeInsets.zero,
+
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text('Oflutter.com'),
-              accountEmail: Text('example@gmail.com'),
-              currentAccountPicture: CircleAvatar(
-                child: ClipOval(
-                  child: Image.network(
-                    'https://e1.pngegg.com/pngimages/976/873/png-clipart-orb-os-x-icon-man-s-profile-icon-inside-white-circle.png',
-                    fit: BoxFit.cover,
-                    width: 90,
-                    height: 90,
-                  ),
-                ),
+              currentAccountPicture:FutureBuilder<String>(
+                  future: usuario_provider.recuperaImagen(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return FutureBuilder(future: usuario_provider.getImagen(snapshot.data.toString()),
+                          builder: (context, snapshot2) {
+                            if(snapshot2.hasData){
+                              return CircleAvatar( radius: 10.0,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage:(NetworkImage(snapshot2.data.toString(),
+
+                                  )));
+                            }
+                            else {
+                              return CircularProgressIndicator();
+                            }
+                          });
+
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
               ),
+
+              accountName: FutureBuilder<String>(
+                  future: usuario_provider.recuperaNombre(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Text("Bienvenido "+ snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
+              ),
+              accountEmail: Text(datosuser.email),
+
               decoration: BoxDecoration(
-                color: Colors.blue,
-                image: DecorationImage(
-                    fit: BoxFit.fill,
-                    image: NetworkImage(
-                        'https://oflutter.com/wp-content/uploads/2021/02/profile-bg3.jpg')),
+
+                  gradient:  LinearGradient(colors: <Color>[
+                    //Color.fromRGBO(29, 23, 91, 1.0),
+                    Colors.blue,
+                    Colors.blueGrey,
+
+                  ])
+
               ),
             ),
             ListTile(
@@ -140,15 +162,16 @@ class _MiEditarPageState extends State<MiEditarPage> {
               onTap: () => _navigateMisAnuncios(),
             ),
             ListTile(
-              leading: Icon(Icons.share),
+              leading: Icon(Icons.request_page),
               title: Text('Mis Solicitudes'),
-              onTap: () => null,
+              onTap: () => _navigateMisSolicitudes(),
             ),
             ListTile(
-              leading: Icon(Icons.notifications),
+              leading: Icon(Icons.chat),
               title: Text('Chats'),
+              onTap: () => _navigateChat(),
             ),
-            Divider(),
+
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Mi Perfil'),
@@ -157,14 +180,38 @@ class _MiEditarPageState extends State<MiEditarPage> {
             ListTile(
               leading: Icon(Icons.description),
               title: Text('Ránking'),
-              onTap: () => null,
+              onTap: () => _navigateRanking(),
+            ),
+            ListTile(
+              title: Text('Aviso Legal'),
+              leading: Icon(Icons.help),
+              onTap: () => _navigateAviso(),
             ),
             Divider(),
             ListTile(
-              title: Text('Cerrar Sesión'),
-              leading: Icon(Icons.exit_to_app),
-              onTap: () => null,
+                title: Text('Cerrar Sesión'),
+                leading: Icon(Icons.exit_to_app),
+                onTap: () {
+                  final _prefs = new DataUser();
+                  // _timer.cancel();
+                  _prefs.token = '';
+                  _prefs.email = '';
+                  _prefs.refreshtoken = '';
+                  _prefs.name='';
+                  _prefs.nuser='';
+                  _prefs.puntos=0;
+
+
+
+                  _signOut();
+
+                  //_navigateLogin();
+
+                }
+
             ),
+
+
           ],
         ),
       ),
@@ -178,6 +225,47 @@ class _MiEditarPageState extends State<MiEditarPage> {
         // in the middle of the parent.
         child: Column(
             children: <Widget>[
+              Container(
+                alignment: Alignment.topRight,
+                child:  AppBar(
+                  toolbarHeight: 30,
+                  backgroundColor: Colors.blueGrey,
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    Container( decoration: BoxDecoration(
+                      //color: Colors.black12, //puntitos
+                    ),
+                      child:
+                      Row(
+
+                        children: [
+                          Padding(padding: const EdgeInsets.all(2.0),
+                          ),
+
+                          //Text(datosuser.puntos.toString(),style: TextStyle(fontSize: 16),),
+                          FutureBuilder(
+                              future: usuario_provider.recuperaPuntos2(datosuser.email),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  mispuntos=snapshot.data;
+                                  return Text(snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                                }
+                                else {
+                                  return CircularProgressIndicator();
+                                }
+                              }
+                          ),
+
+                          Icon(Icons.monetization_on),
+                        ],
+                      ),
+                    ),
+
+
+                  ],
+
+                ),
+              ),
               Flexible(
                 fit: FlexFit.tight,
                 child: StreamBuilder(
@@ -224,18 +312,18 @@ class _MiEditarPageState extends State<MiEditarPage> {
   }
 
   Widget _cargarDatos(BuildContext context, DocumentSnapshot solicitud) {
+
     return GestureDetector(
       key: UniqueKey(),
 
       child:
       Container(
+        color: Colors.white70,
         padding: const EdgeInsets.all(5.0),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(
-              color: Colors.lightBlue,
-            ),
+            color: Colors.white70,
+
             borderRadius: BorderRadius.circular(10.0),
           ),
           child: Row(
@@ -281,6 +369,9 @@ class _MiEditarPageState extends State<MiEditarPage> {
                                     return null;
                                   }
                               ),
+                              Padding(
+                                padding: EdgeInsets.all(5.0),
+                              ),
                               TextFormField(
                                   maxLines: 4,
                                   minLines: 4,
@@ -296,10 +387,13 @@ class _MiEditarPageState extends State<MiEditarPage> {
                                   ),
                                   validator: (value) {
                                     if (value.isEmpty) {
-                                      //return AppLocalizations.of(context).translate('introduceapellido');
+                                      return "Introduce una pequeña descripción por favor";
                                     }
                                     return null;
                                   }
+                              ),
+                              Padding(
+                                padding: EdgeInsets.all(5.0),
                               ),
                               TextFormField(
                                   initialValue:
@@ -365,7 +459,7 @@ class _MiEditarPageState extends State<MiEditarPage> {
                               ),
 
                               Padding(
-                                  padding: const EdgeInsets.all(10.0)
+                                  padding: const EdgeInsets.all(15.0)
                               ),
 
                             ],
@@ -389,12 +483,46 @@ class _MiEditarPageState extends State<MiEditarPage> {
                                 "Realizar cambios", textAlign: TextAlign
                                   .center,),
 
-                              onPressed: () {
-                                hola = solicitud.reference.id;
 
-                                solicitud_provider.updateSolicitud(hola, sol);
-                                _refresh();
-                                _navigateMisAnuncios();
+
+                              onPressed: () async {
+
+                                if(sol.Puntos==''){
+                                  sol.Puntos=solicitud.get("Puntos");
+                                }
+
+                                if(int.parse(sol.Puntos)<=mispuntos){
+                                  QuerySnapshot querySnap = await FirebaseFirestore.instance.collection('Usuario').where('id',isEqualTo: datosuser.email).get();
+                                  QueryDocumentSnapshot doc = querySnap.docs[0];
+                                  DocumentReference docRef = doc.reference;
+                                  if(int.parse(sol.Puntos)>int.parse(solicitud.get("Puntos")))
+                                  {
+                                    int resultado=int.parse(sol.Puntos)-int.parse(solicitud.get("Puntos"));
+                                    int resta=mispuntos-resultado;
+
+
+                                    usuario_provider.updatePuntos(docRef.id, resta);
+                                  }
+                                  if(int.parse(sol.Puntos)<int.parse(solicitud.get("Puntos")))
+                                    {
+                                      int resultado=int.parse(solicitud.get("Puntos"))-int.parse(sol.Puntos);
+                                      int suma=mispuntos+resultado;
+
+
+                                      usuario_provider.updatePuntos(docRef.id, suma);
+                                    }
+                                  hola = solicitud.reference.id;
+
+                                  solicitud_provider.updateSolicitud(hola, sol);
+                                  _refresh();
+                                  _navigateMisAnuncios();
+                                }
+                                else{
+                                  mostrarAviso(context, "Lo sentimos, no tienes los puntos suficientes");
+
+                                }
+
+
 
 
                                 //ud.DataUser datosuser1 = ud.DataUser();
@@ -439,6 +567,58 @@ class _MiEditarPageState extends State<MiEditarPage> {
     )).then( (var value) {
       _refresh();
     });
+  }
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushNamed(context, 'login');
+
+  }
+  void _navigateMisSolicitudes(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => MisSolicitudes(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateChat(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => ChatList(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateAviso(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => Aviso(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateRanking(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => RankingPage(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+
+  void mostrarAviso(BuildContext context, String mensaje) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Alerta'),
+            content: Text(mensaje),
+            actions: <Widget>[
+              FlatButton(
+                  onPressed: () => Navigator.of(context).pop(), child: Text('Ok'))
+            ],
+          );
+        });
   }
 
 

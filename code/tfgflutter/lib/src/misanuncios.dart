@@ -1,33 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:tfgflutter/src/detallesanuncio.dart';
 import 'package:tfgflutter/src/editaranuncio.dart';
 import 'package:tfgflutter/src/mianuncio.dart';
 import 'package:tfgflutter/src/provider/solicitud_provider.dart';
+import 'package:tfgflutter/src/provider/user_provider.dart';
+import 'package:tfgflutter/src/ranking.dart';
 import 'package:tfgflutter/src/solicitud.dart';
 import 'dart:async';
+import 'avisolegal.dart';
+import 'chatlist.dart';
 import 'controller/userdata.dart' as ud;
+import 'controller/userdata.dart';
 import 'home.dart';
+import 'miperfil.dart';
+import 'mis_solicitudes.dart';
 
 
 
-class MisAnuncios extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
 
-        primarySwatch: Colors.blue,
-      ),
-      home: MisAnunciosPage(title: 'Tablón de Anuncios'),
-    );
-  }
-}
-
-class MisAnunciosPage extends StatefulWidget {
-  MisAnunciosPage({Key key, this.title}) : super(key: key);
+class MisAnuncios extends StatefulWidget {
+  MisAnuncios({Key key, this.title}) : super(key: key);
 
   final String title;
   Timer _timer;
@@ -37,7 +32,7 @@ class MisAnunciosPage extends StatefulWidget {
   _MisAnunciosPageState createState() => _MisAnunciosPageState();
 }
 
-class _MisAnunciosPageState extends State<MisAnunciosPage> {
+class _MisAnunciosPageState extends State<MisAnuncios> {
   Solicitud_Provider solicitud_provider= new Solicitud_Provider();
   Icon customIcon = const Icon(Icons.search);
   Widget customSearchBar = const Text('Mis Anuncios');
@@ -46,6 +41,8 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
   var items = List<String>();
   Stream<QuerySnapshot> SolicitudesCargadas;
   Stream<QuerySnapshot> SolicitantesCargados;
+  Usuario_Provider usppr=Usuario_Provider();
+  int mispuntos;
 
   ud.DataUser datosuser=ud.DataUser();
   String id;
@@ -85,6 +82,7 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
+      backgroundColor: Colors.grey,
 
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
@@ -97,27 +95,56 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
       drawer: Drawer(
         child: ListView(
           // Remove padding
-          padding: EdgeInsets.zero,
+
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text('Oflutter.com'),
-              accountEmail: Text('example@gmail.com'),
-              currentAccountPicture: CircleAvatar(
-                child: ClipOval(
-                  child: Image.network(
-                    'https://e1.pngegg.com/pngimages/976/873/png-clipart-orb-os-x-icon-man-s-profile-icon-inside-white-circle.png',
-                    fit: BoxFit.cover,
-                    width: 90,
-                    height: 90,
-                  ),
-                ),
+              currentAccountPicture:FutureBuilder<String>(
+                  future: usppr.recuperaImagen(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return FutureBuilder(future: usppr.getImagen(snapshot.data.toString()),
+                          builder: (context, snapshot2) {
+                            if(snapshot2.hasData){
+                              return CircleAvatar( radius: 10.0,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage:(NetworkImage(snapshot2.data.toString(),
+
+                                  )));
+                            }
+                            else {
+                              return CircularProgressIndicator();
+                            }
+                          });
+
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
               ),
+
+              accountName: FutureBuilder<String>(
+                  future: usppr.recuperaNombre(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Text("Bienvenido "+ snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
+              ),
+              accountEmail: Text(datosuser.email),
+
               decoration: BoxDecoration(
-                color: Colors.blue,
-                image: DecorationImage(
-                    fit: BoxFit.fill,
-                    image: NetworkImage(
-                        'https://oflutter.com/wp-content/uploads/2021/02/profile-bg3.jpg')),
+
+                  gradient:  LinearGradient(colors: <Color>[
+                    //Color.fromRGBO(29, 23, 91, 1.0),
+                    Colors.blue,
+                    Colors.blueGrey,
+
+                  ])
+
               ),
             ),
             ListTile(
@@ -131,31 +158,56 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
               onTap: () => _navigateMisAnuncios(),
             ),
             ListTile(
-              leading: Icon(Icons.share),
+              leading: Icon(Icons.request_page),
               title: Text('Mis Solicitudes'),
-              onTap: () => null,
+              onTap: () => _navigateMisSolicitudes(),
             ),
             ListTile(
-              leading: Icon(Icons.notifications),
+              leading: Icon(Icons.chat),
               title: Text('Chats'),
+              onTap: () => _navigateChat(),
             ),
-            Divider(),
+
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Mi Perfil'),
-              onTap: () => null,
+              onTap: () => _navigateMiPerfil(),
             ),
             ListTile(
               leading: Icon(Icons.description),
               title: Text('Ránking'),
-              onTap: () => null,
+              onTap: () => _navigateRanking(),
+            ),
+            ListTile(
+              title: Text('Aviso Legal'),
+              leading: Icon(Icons.help),
+              onTap: () => _navigateAviso(),
             ),
             Divider(),
             ListTile(
-              title: Text('Cerrar Sesión'),
-              leading: Icon(Icons.exit_to_app),
-              onTap: () => null,
+                title: Text('Cerrar Sesión'),
+                leading: Icon(Icons.exit_to_app),
+                onTap: () {
+                  final _prefs = new DataUser();
+                  // _timer.cancel();
+                  _prefs.token = '';
+                  _prefs.email = '';
+                  _prefs.refreshtoken = '';
+                  _prefs.name='';
+                  _prefs.nuser='';
+                  _prefs.puntos=0;
+
+
+
+                  _signOut();
+
+                  //_navigateLogin();
+
+                }
+
             ),
+
+
           ],
         ),
       ),
@@ -169,6 +221,49 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
         // in the middle of the parent.
         child: Column(
             children: <Widget>[
+              Container(
+                color: Colors.grey,
+                alignment: Alignment.topRight,
+                child:  AppBar(
+                  toolbarHeight: 30,
+                  backgroundColor: Colors.blueGrey,
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    Container( decoration: BoxDecoration(
+                      //color: Colors.black12, //puntitos
+                    ),
+                      child:
+                      Row(
+
+                        children: [
+                          Padding(padding: const EdgeInsets.all(2.0),
+                          ),
+
+                          //Text(datosuser.puntos.toString(),style: TextStyle(fontSize: 16),),
+                          FutureBuilder(
+                              future: usppr.recuperaPuntos2(datosuser.email),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+
+                                  mispuntos=snapshot.data;
+                                  return Text(snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                                }
+                                else {
+                                  return CircularProgressIndicator();
+                                }
+                              }
+                          ),
+
+                          Icon(Icons.monetization_on),
+                        ],
+                      ),
+                    ),
+
+
+                  ],
+
+                ),
+              ),
               Flexible(
                 fit: FlexFit.tight,
                 child: StreamBuilder(
@@ -176,6 +271,7 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
                   builder:
                       (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
                     if (snapshot.hasData) {
+
                       return ListView.builder(
                         itemCount: snapshot.data.docs.length,
                         itemBuilder: (context, i) => _cargarDatos(context, snapshot.data.docs[i]),
@@ -221,16 +317,16 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
   }
   Widget _cargarDatos(BuildContext context, QueryDocumentSnapshot solicitud){
     return GestureDetector(
+
       key: UniqueKey(),
       child:
       Container(
+        color: Colors.grey,
           padding: const EdgeInsets.all(5.0),
           child:Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
-                  color: Colors.lightBlue,
-                ),
+                color: Colors.white70,
+
                 borderRadius: BorderRadius.circular(10.0),
               ),
               child:Row(
@@ -244,6 +340,7 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
 
                       ],
                     ),
+
                     Flexible(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,16 +400,37 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
                           Row(children: [
                             CupertinoButton(  padding: EdgeInsets.only(left:20),
                                 onPressed: (){
-                                  id=solicitud.id;
-                                  _navigateDetallesAnuncio(id);
+                                  if(solicitud.get("Estado")=="Sin asignar") {
+
+                                    id=solicitud.id;
+                                    _navigateDetallesAnuncio(id);
+                                  }
+                                  else{
+                                    mostrarAviso(context,"Lo sentimos, pero no puedes editar este anuncio porque ya ha sido asignado"
+                                        " a otro usuario");
+                                  }
                                 }, child: Icon(Icons.edit,color: Colors.grey,size: 20,)),
                             //SizedBox(width: 1), // give it width
 
                             CupertinoButton(
-                                onPressed: (){
-                                  id=solicitud.id;
-                                  solicitud_provider.eliminarAnuncio(id);
-                                  _refresh();
+                                onPressed: () async {
+
+                                  if(solicitud.get("Estado")=="Sin asignar"){
+                                    id=solicitud.id;
+
+                                    int nuevosp= mispuntos + int.parse(solicitud.get("Puntos"));
+                                    QuerySnapshot querySnap = await FirebaseFirestore.instance.collection('Usuario').where('id',isEqualTo: datosuser.email).get();
+                                    QueryDocumentSnapshot doc = querySnap.docs[0];
+                                    DocumentReference docRef = doc.reference;
+                                    usppr.updatePuntos(docRef.id, nuevosp);
+                                    solicitud_provider.eliminarAnuncio(id);
+                                    _refresh();
+                                  }
+                                  else{
+                                    mostrarAviso(context,"Lo sentimos, pero no puedes eliminar este anuncio porque ya ha sido asignado"
+                                        " a otro usuario");
+                                  }
+
                                 }, child: Icon(Icons.delete,color: Colors.grey,size: 20,)),
                           ],),
                         ],
@@ -354,10 +472,72 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
       _refresh();
     });
   }
+
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushNamed(context, 'login');
+
+  }
+  void _navigateMisSolicitudes(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => MisSolicitudes(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateChat(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => ChatList(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateAviso(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => Aviso(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateRanking(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => RankingPage(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateMiPerfil(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => PerfilPage(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+
+
+  void mostrarAviso(BuildContext context, String mensaje) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Alerta'),
+            content: Text(mensaje),
+            actions: <Widget>[
+              FlatButton(
+                  onPressed: () => Navigator.of(context).pop(), child: Text('Ok'))
+            ],
+          );
+        });
+  }
   void _navigateDetallesAnuncio(String email){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
-      builder: (context) => MiEditarPage(email),
+      builder: (context) => EditarPage(email),
     )).then( (var value) {
       _refresh();
     });
@@ -366,7 +546,7 @@ class _MisAnunciosPageState extends State<MisAnunciosPage> {
   void _navigateDetallesMiAnuncio(String email){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
-      builder: (context) => MyMiAnuncio(email),
+      builder: (context) => MiAnuncio(email),
     )).then( (var value) {
       _refresh();
     });

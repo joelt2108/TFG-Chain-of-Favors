@@ -1,11 +1,17 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
-
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:tfgflutter/src/register.dart';
+import 'controller/userdata.dart' as ud;
 import 'package:flutter/material.dart';
 import 'package:tfgflutter/src/avisolegal.dart';
 import 'package:tfgflutter/src/chatlist.dart';
 import 'package:tfgflutter/src/detallesanuncio.dart';
+import 'package:tfgflutter/src/login.dart';
 import 'package:tfgflutter/src/miperfil.dart';
 import 'package:tfgflutter/src/mis_solicitudes.dart';
 import 'package:tfgflutter/src/model/user_model.dart';
@@ -19,6 +25,8 @@ import 'chat.dart';
 import 'controller/userdata.dart' as ud;
 
 
+import 'controller/userdata.dart';
+import 'mianuncio.dart';
 import 'misanuncios.dart';
 
 
@@ -26,23 +34,9 @@ String dropdownvalue = 'Cualquiera';
 String rangPuntos='Cualquiera';
 
 
-class HomePage extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
 
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Tablón de Anuncios'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+class HomePage extends StatefulWidget {
+  HomePage({Key key, this.title}) : super(key: key);
 
   final String title;
   Timer _timer;
@@ -53,7 +47,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<HomePage> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   Solicitud_Provider solicitud_provider= new Solicitud_Provider();
   Usuario_Provider usuario_provider= new Usuario_Provider();
   Icon customIcon = const Icon(Icons.search);
@@ -94,17 +90,21 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _refresh()  {
+    getPuntos();
     SolicitudesCargadas = solicitud_provider.cargarSolicitudes();
     UsuarioCargado=usuario_provider.getUsuario(datosuser.email);
+    //datosuser.puntos=usuario_provider.recuperaPuntos(datosuser.email);
 
     setState(() {});
 
   }
 
 
-  void initState() {
+  void initState()  {
     super.initState();
     SolicitudesCargadas = solicitud_provider.cargarSolicitudes();
+    getPuntos();
+
 
 
   }
@@ -185,27 +185,56 @@ class _MyHomePageState extends State<MyHomePage> {
       drawer: Drawer(
         child: ListView(
           // Remove padding
-          padding: EdgeInsets.zero,
+
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text('Oflutter.com'),
-              accountEmail: Text('example@gmail.com'),
-              currentAccountPicture: CircleAvatar(
-                child: ClipOval(
-                  child: Image.network(
-                    'https://e1.pngegg.com/pngimages/976/873/png-clipart-orb-os-x-icon-man-s-profile-icon-inside-white-circle.png',
-                    fit: BoxFit.cover,
-                    width: 90,
-                    height: 90,
-                  ),
-                ),
-              ),
+              currentAccountPicture:FutureBuilder<String>(
+            future: usuario_provider.recuperaImagen(datosuser.email),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return FutureBuilder(future: usuario_provider.getImagen(snapshot.data.toString()),
+                builder: (context, snapshot2) {
+                if(snapshot2.hasData){
+                  return CircleAvatar( radius: 10.0,
+                      backgroundColor: Colors.transparent,
+                      backgroundImage:(NetworkImage(snapshot2.data.toString(),
+
+                      )));
+                }
+                else {
+                  return CircularProgressIndicator();
+                }
+                });
+
+          }
+          else {
+            return CircularProgressIndicator();
+          }
+        }
+    ),
+
+              accountName: FutureBuilder<String>(
+        future: usuario_provider.recuperaNombre(datosuser.email),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Text("Bienvenido "+ snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+            }
+            else {
+              return CircularProgressIndicator();
+            }
+          }
+      ),
+              accountEmail: Text(datosuser.email),
+
               decoration: BoxDecoration(
-                color: Colors.blue,
-                image: DecorationImage(
-                    fit: BoxFit.fill,
-                    image: NetworkImage(
-                        'https://oflutter.com/wp-content/uploads/2021/02/profile-bg3.jpg')),
+
+                gradient:  LinearGradient(colors: <Color>[
+                  //Color.fromRGBO(29, 23, 91, 1.0),
+                  Colors.blue,
+                  Colors.blueGrey,
+
+                ])
+
               ),
             ),
             ListTile(
@@ -219,16 +248,16 @@ class _MyHomePageState extends State<MyHomePage> {
               onTap: () => _navigateMisAnuncios(),
             ),
             ListTile(
-              leading: Icon(Icons.share),
+              leading: Icon(Icons.request_page),
               title: Text('Mis Solicitudes'),
               onTap: () => _navigateMisSolicitudes(),
             ),
             ListTile(
-              leading: Icon(Icons.notifications),
+              leading: Icon(Icons.chat),
               title: Text('Chats'),
               onTap: () => _navigateChat(),
             ),
-            Divider(),
+
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Mi Perfil'),
@@ -239,17 +268,35 @@ class _MyHomePageState extends State<MyHomePage> {
               title: Text('Ránking'),
               onTap: () => _navigateRanking(),
             ),
+            ListTile(
+              title: Text('Aviso Legal'),
+              leading: Icon(Icons.help),
+              onTap: () => _navigateAviso(),
+            ),
             Divider(),
             ListTile(
               title: Text('Cerrar Sesión'),
               leading: Icon(Icons.exit_to_app),
-              onTap: () => null,
+              onTap: () {
+                final _prefs = new DataUser();
+                // _timer.cancel();
+                _prefs.token = '';
+                _prefs.email = '';
+                _prefs.refreshtoken = '';
+                _prefs.name='';
+                _prefs.nuser='';
+                _prefs.puntos=0;
+
+
+
+                _signOut();
+
+                //_navigateLogin();
+
+              }
+
             ),
-            ListTile(
-              title: Text('Aviso Legal'),
-              leading: Icon(Icons.exit_to_app),
-              onTap: () => _navigateAviso(),
-            ),
+
 
           ],
         ),
@@ -283,7 +330,20 @@ class _MyHomePageState extends State<MyHomePage> {
                           Padding(padding: const EdgeInsets.all(2.0),
                           ),
 
-                    Text(usuario.Puntos.toString(),style: TextStyle(fontSize: 16),), Icon(Icons.monetization_on),
+                    //Text(datosuser.puntos.toString(),style: TextStyle(fontSize: 16),),
+                          FutureBuilder(
+                              future: usuario_provider.recuperaPuntos2(datosuser.email),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Text(snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                                }
+                                else {
+                                  return CircularProgressIndicator();
+                                }
+                              }
+                          ),
+
+                          Icon(Icons.monetization_on),
                         ],
                       ),
                   ),
@@ -352,113 +412,125 @@ class _MyHomePageState extends State<MyHomePage> {
 
   }
   Widget _cargarDatos(BuildContext context, QueryDocumentSnapshot solicitud){
-    return GestureDetector(
-      key: UniqueKey(),
-      child:
-      Container(
 
-          padding: const EdgeInsets.all(5.0),
-          child:
-          Container(
-              decoration: BoxDecoration(
-                color: Colors.white70,
-                border: Border.all(
-                  color: Colors.blueGrey,
+      return GestureDetector(
+        key: UniqueKey(),
+        child:
+        Container(
+
+            padding: const EdgeInsets.all(5.0),
+            child:
+            Container(
+                decoration: BoxDecoration(
+                  color: Colors.white70,
+                  border: Border.all(
+                    color: Colors.blueGrey,
+                  ),
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
-                borderRadius: BorderRadius.circular(10.0),
-              ),
 
-              child:Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
+                child:Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
 
-                    Column(
-                      children: <Widget>[
-                        Padding(
-                            padding: const EdgeInsets.all(15),
-
-                        ),
-
-
-                        Container(
-                          padding: const EdgeInsets.only(left: 10),
-                          child: FutureBuilder<String>(
-                                future: solicitud_provider.getImagen('${solicitud.get('Image')}'),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  return CircleAvatar( radius: 20.0,
-                                      backgroundColor: Colors.transparent,
-                                      backgroundImage:(NetworkImage(snapshot.data.toString(),
-
-                                      )));
-                                }
-                                else {
-                                  return CircularProgressIndicator();
-                                }
-                              }
-                          ),
-                        ),
-
-                      ],
-                    ),
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Column(
                         children: <Widget>[
                           Padding(
-                              padding: const EdgeInsets.all(12.0)
+                            padding: const EdgeInsets.all(15),
+
                           ),
+
+
                           Container(
-                              margin: const EdgeInsets.only(left: 20.0),
-                              child:Text('${solicitud.get('Titulo')}',
-                                style: TextStyle(
-                                    fontSize:18.0,
-                                    fontWeight: FontWeight.bold),
-                              )
+                            padding: const EdgeInsets.only(left: 10),
+                            child: FutureBuilder<String>(
+                                future: solicitud_provider.getImagen('${solicitud.get('Image')}'),
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData) {
+                                    return CircleAvatar( radius: 20.0,
+                                        backgroundColor: Colors.transparent,
+                                        backgroundImage:(NetworkImage(snapshot.data.toString(),
+
+                                        )));
+                                  }
+                                  else {
+                                    return CircularProgressIndicator();
+                                  }
+                                }
+                            ),
                           ),
-                          Padding(
-                              padding: const EdgeInsets.all(1.0)
-                          ),
-                          Container(
-                              margin: const EdgeInsets.only(left: 20.0),
-                              child:Text('${solicitud.get('Descripcion')}',
-                                style: TextStyle(
-                                    fontSize:18.0,)
-                                    //fontWeight: FontWeight.bold),
-                              )
-                          ),
-                          Container(
-                              margin: const EdgeInsets.only(left: 20.0),
-                              //child:Text(tipoC)
-                          ),
-                          Padding(
-                              padding: const EdgeInsets.all(1.0)
-                          ),
-                          Container(
-                              margin: const EdgeInsets.only(left: 20.0),
-                              child:Text('${solicitud.get('Poblacion')}')
-                          ),
-                          Padding(
-                              padding: const EdgeInsets.all(1.0)
-                          ),
-                          Container(
-                              margin: const EdgeInsets.only(left: 20.0),
-                              child:Text('${solicitud.get('Puntos')}'+" Puntos")
-                          ),
-                          Padding(
-                              padding: const EdgeInsets.all(1.0)
-                          ),
+
                         ],
                       ),
-                    )
-                  ]
-              ))
-      ),
-      onTap: () {
-        id=solicitud.id;
-          _navigateDetallesAnuncio(id);
-      },
-    );
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Padding(
+                                padding: const EdgeInsets.all(12.0)
+                            ),
+                            Container(
+                                margin: const EdgeInsets.only(left: 20.0),
+                                child:Text('${solicitud.get('Titulo')}',
+                                  style: TextStyle(
+                                      fontSize:18.0,
+                                      fontWeight: FontWeight.bold),
+                                )
+                            ),
+                            Padding(
+                                padding: const EdgeInsets.all(1.0)
+                            ),
+                            Container(
+                                margin: const EdgeInsets.only(left: 20.0),
+                                child:Text('${solicitud.get('Descripcion')}',
+                                    style: TextStyle(
+                                      fontSize:18.0,)
+                                  //fontWeight: FontWeight.bold),
+                                )
+                            ),
+                            Container(
+                              margin: const EdgeInsets.only(left: 20.0),
+                              //child:Text(tipoC)
+                            ),
+                            Padding(
+                                padding: const EdgeInsets.all(1.0)
+                            ),
+                            Container(
+                                margin: const EdgeInsets.only(left: 20.0),
+                                child:Text('${solicitud.get('Poblacion')}')
+                            ),
+                            Padding(
+                                padding: const EdgeInsets.all(1.0)
+                            ),
+                            Container(
+                                margin: const EdgeInsets.only(left: 20.0),
+                                child:Text('${solicitud.get('Puntos')}'+" Puntos")
+                            ),
+                            Padding(
+                                padding: const EdgeInsets.all(1.0)
+                            ),
+                          ],
+                        ),
+                      )
+                    ]
+                ))
+        ),
+        onTap: () {
+
+          if(solicitud.get("id")!=datosuser.email)
+          {
+            id=solicitud.id;
+            _navigateDetallesAnuncio(id);
+          }
+          else{
+            _navigateDetallesMiAnuncio(solicitud.id);
+
+          }
+
+        },
+      );
+
+
 
 
 
@@ -514,7 +586,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _navigateDetallesAnuncio(String email){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
-      builder: (context) => MyDetallesAnuncios(email),
+      builder: (context) => DetallesAnuncios(email),
     )).then( (var value) {
       _refresh();
     });
@@ -526,6 +598,15 @@ class _MyHomePageState extends State<MyHomePage> {
       builder: (context) => HomePage(),
     )).then( (var value) {
       _refresh();
+    });
+  }
+
+  void _navigateLogin(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => LoginPage(),
+    )).then( (var value) {
+      //_refresh();
     });
   }
   void _navigateMiPerfil(){
@@ -548,7 +629,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _navigateMisSolicitudes(){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
-      builder: (context) => MisSolicitudesPage(),
+      builder: (context) => MisSolicitudes(),
     )).then( (var value) {
       _refresh();
     });
@@ -557,7 +638,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _navigateChat(){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
-      builder: (context) => ChatListPage(),
+      builder: (context) => ChatList(),
     )).then( (var value) {
       _refresh();
     });
@@ -572,6 +653,20 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void _navigateDetallesMiAnuncio(String email){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => MiAnuncio(email),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushNamed(context, 'login');
+
+  }
 
   Future<Widget> _showMyDialog()  {
     return showDialog<Widget>(
@@ -619,6 +714,12 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+   getPuntos()async{
+    var pts=await usuario_provider.cargaUsuario(datosuser.email);
+    datosuser.puntos=pts.docs.first["Puntos"];
+
+  }
+
 
 }
 
@@ -636,7 +737,7 @@ class _MyDialogState extends State<MyDialog> {
     'Guipúzcoa','Huelva','Huesca','Islas Baleares','Jaén','León','Lleida','Lugo','Madrid','Málaga','Murcia','Navarra',
     'Ourense','Palencia','Las Palmas','Pontevedra','La Rioja','Salamanca','Segovia','Sevilla','Soria','Tarragona',
     'Santa Cruz de Tenerife','Teruel','Toledo','Valencia','Valladolid','Vizcaya','Zamora','Zaragoza'];
-  MyHomePage mh = new MyHomePage();
+
 
 
   @override
@@ -690,7 +791,7 @@ class MyDialogP extends StatefulWidget {
 
 class _MyDialogStateP extends State<MyDialogP> {
   List<String> RangosP = <String>['Cualquiera','50','100','150','200','250','300','350','400','450','500'];
-  MyHomePage mh = new MyHomePage();
+
 
 
   @override

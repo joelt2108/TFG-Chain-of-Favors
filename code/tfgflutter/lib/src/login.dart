@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'controller/userdata.dart' as ud;
+import 'home.dart';
 
 
 class LoginPage extends StatefulWidget {
@@ -20,6 +21,15 @@ class _LoginSectionState extends State<LoginPage> {
   bool _success;
   String _userEmail;
 
+
+  void _navigateHome(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => HomePage(),
+    )).then( (var value) {
+
+    });
+  }
   @override
   void initState() {
     super.initState();
@@ -82,7 +92,7 @@ class _LoginSectionState extends State<LoginPage> {
                                                     fillColor: Colors.white70),
                                               validator: (String value) {
                                                 if (value.isEmpty) {
-                                                  return null;
+                                                  return ("Debes introducir un email válido");
                                                 }
                                                 return null;
                                               },
@@ -110,7 +120,7 @@ class _LoginSectionState extends State<LoginPage> {
                                                 validator: (String value) {
 
                                                   if (value.isEmpty) {
-                                                    return  null;
+                                                    return  ("Debes introducir tu contraseña ");
                                                   }
                                                   return null;
                                                 },
@@ -159,6 +169,8 @@ class _LoginSectionState extends State<LoginPage> {
                       ))
                 ]))
     );
+
+
   }
   void _login() async {
     try {
@@ -170,12 +182,18 @@ class _LoginSectionState extends State<LoginPage> {
         setState(() async {
           ud.DataUser datosuser = ud.DataUser();
           final token = await user.getIdToken();
+
           datosuser.token = token.toString();
           datosuser.email=_emailController.text;
           datosuser.refreshtoken=user.refreshToken;
+
           _success = true;
           _userEmail = user.email;
+          //_navigateHome();
+
           Navigator.pushReplacementNamed(context, 'home');
+
+
         });
 
         setState(() {
@@ -184,14 +202,35 @@ class _LoginSectionState extends State<LoginPage> {
       }
     } on FirebaseAuthException catch  (e) {
       if (e.code == 'invalid-email') {
-        Text("Formato incorrecto");
-      } else {
-        Text("Ha ocurrido un error");
+        mostrarAviso(context, "El mail proporcionado no es válido, inténtelo de nuevo");
+      }
+      if (e.code == 'user-not-found') {
+        mostrarAviso(context, "El mail proporcionado no corresponde a ningún usuario, inténtelo de nuevo o regístrese");
+      }
+      if (e.code == 'wrong-password') {
+        mostrarAviso(context, "La contraseña introducida no es correcta");
       }
     }
   }
 
   }
+
+void mostrarAviso(BuildContext context, String mensaje) {
+  showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Alerta'),
+          content: Text(mensaje),
+          actions: <Widget>[
+            FlatButton(
+                onPressed: () => Navigator.of(context).pop(), child: Text('Ok'))
+          ],
+        );
+      });
+}
+
+
 
   Widget _crearFondo(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -215,6 +254,16 @@ class _LoginSectionState extends State<LoginPage> {
           borderRadius: BorderRadius.circular(100.0),
           color: Color.fromRGBO(255, 255, 255, 0.05)),
     );
+
+    void _navigateHome(){
+      Navigator.of(context)
+          .push(MaterialPageRoute<void>(
+        builder: (context) => HomePage(),
+      )).then( (var value) {
+
+      });
+    }
+
 
     return Stack(
       children: <Widget>[

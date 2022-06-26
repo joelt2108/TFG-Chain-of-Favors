@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:tfgflutter/src/controller/userdata.dart';
 import 'package:tfgflutter/src/detallesanuncio.dart';
 import 'package:tfgflutter/src/model/user_model.dart';
 import 'dart:io';
@@ -24,8 +25,11 @@ class Usuario_Provider{
   Future<QuerySnapshot<Map<String,dynamic>>> cargaUsuarioChat(String id) async{
     return await _db.collection("Usuario").where('id', isEqualTo: id).get();
   }
-  
-  
+
+  Future<QuerySnapshot<Map<String,dynamic>>> cargaUsuario(String id) async{
+    return await _db.collection("Usuario").where('id', isEqualTo: id).get();
+  }
+
   Future<void> updateSolicitudUser(String id, String valor, Usuario usuario, List<String> lista ) {
 
 
@@ -70,12 +74,18 @@ class Usuario_Provider{
     _db.collection("Usuario").doc(id).update({
      'Puntos': puntos,
     });
+
+    //datosuser.puntos=puntos;
+
   }
 
-  Future<void> updateCookies(String id, bool bolea) {
+  Future<void> updateFavores(String id, int favores) {
     _db.collection("Usuario").doc(id).update({
-      'Cookies': bolea,
+      'NFavores': favores,
     });
+
+    //datosuser.puntos=puntos;
+
   }
   Stream<QuerySnapshot> getAllUsers() {
     return _db.collection("Usuario").snapshots();
@@ -185,6 +195,13 @@ class Usuario_Provider{
     });
   }
 
+  Future<void> restaPuntos(String id, int puntos) {
+    _db.collection("Usuario").doc(id).update({
+      'Puntos': usuario.Nombre,
+
+    });
+  }
+
   addToken(String token, String id) {
     _db.collection("Usuario").where('id', isEqualTo: id).get()
         .then((value) =>
@@ -247,7 +264,7 @@ class Usuario_Provider{
 
   }
 
-  int recuperaPuntos(String id){
+  Future<int> recuperaPuntos(String id)async{
 
       int nombre = 0;
       _db.collection("Usuario").where('id', isEqualTo: id).get()
@@ -263,5 +280,34 @@ class Usuario_Provider{
 
   }
 
+  Future<int> recuperaPuntos2(String id)async{
+
+    var a = await _db
+        .collection("Usuario")
+        .where('id', isEqualTo:id ).get();
+
+    return a.docs.first["Puntos"];
+
+
+  }
+  Future<String> recuperaNombre(String id)async{
+
+    var a = await _db
+        .collection("Usuario")
+        .where('id', isEqualTo:id ).get();
+
+    return a.docs.first["Nombre"];
+
+
+  }Future<String> recuperaImagen(String id)async{
+
+    var a = await _db
+        .collection("Usuario")
+        .where('id', isEqualTo:id ).get();
+
+    return a.docs.first["Image"];
+
+
+  }
   }
 

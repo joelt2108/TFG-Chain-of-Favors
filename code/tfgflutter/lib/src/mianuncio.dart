@@ -10,13 +10,18 @@ import 'package:tfgflutter/src/model/solicitud_model.dart';
 import 'package:tfgflutter/src/model/user_model.dart';
 import 'package:tfgflutter/src/provider/solicitud_provider.dart';
 import 'package:tfgflutter/src/provider/user_provider.dart';
+import 'package:tfgflutter/src/ranking.dart';
 import 'package:tfgflutter/src/solicitud.dart';
 
 import 'dart:async';
+import 'avisolegal.dart';
+import 'chatlist.dart';
 import 'controller/userdata.dart' as ud;
 
 
+import 'controller/userdata.dart';
 import 'home.dart';
+import 'mis_solicitudes.dart';
 import 'misanuncios.dart';
 
 ud.DataUser datosuser = ud.DataUser();
@@ -26,24 +31,9 @@ final usuarioProvider = new Usuario_Provider();
 
 
 
-class MiAnuncio extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
 
-        primarySwatch: Colors.blue,
-      ),
-      home: MyMiAnuncio(datosuser.email,title: 'Tablón de Anuncios'),
-
-    );
-  }
-}
-
-class MyMiAnuncio extends StatefulWidget {
-  MyMiAnuncio(this.email, {Key key, this.title}) : super(key: key);
+class MiAnuncio extends StatefulWidget {
+  MiAnuncio(this.email, {Key key, this.title}) : super(key: key);
 
   final String title;
   final String email;
@@ -54,7 +44,7 @@ class MyMiAnuncio extends StatefulWidget {
   _MyMiAnuncioPage createState() => _MyMiAnuncioPage();
 }
 
-class _MyMiAnuncioPage extends State<MyMiAnuncio> {
+class _MyMiAnuncioPage extends State<MiAnuncio> {
   Solicitud_Provider solicitud_provider= new Solicitud_Provider();
   Usuario_Provider usuario_provider= new Usuario_Provider();
   final usuarioProvider = new Usuario_Provider();
@@ -104,7 +94,7 @@ int tt=0;
 
 
   void _refresh()  {
-    _rellenarItemsSol();
+    //_rellenarItemsSol();
 
     //SolicitudesCargadas = solicitud_provider.cargarSolicitudes();
     UsuarioCargado=usuario_provider.getUsuario(datosuser.email);
@@ -124,7 +114,7 @@ int tt=0;
 
   void initState() {
     super.initState();
-    _rellenarItemsSol();
+    //_rellenarItemsSol();
 
     SolicitudesCargadas = solicitud_provider.cargarSolicitudes();
     DAnuncios=solicitud_provider.cargaSolicitud(widget.email);
@@ -159,27 +149,56 @@ int tt=0;
       drawer: Drawer(
         child: ListView(
           // Remove padding
-          padding: EdgeInsets.zero,
+
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text('Oflutter.com'),
-              accountEmail: Text('example@gmail.com'),
-              currentAccountPicture: CircleAvatar(
-                child: ClipOval(
-                  child: Image.network(
-                    'https://e1.pngegg.com/pngimages/976/873/png-clipart-orb-os-x-icon-man-s-profile-icon-inside-white-circle.png',
-                    fit: BoxFit.cover,
-                    width: 90,
-                    height: 90,
-                  ),
-                ),
+              currentAccountPicture:FutureBuilder<String>(
+                  future: usuario_provider.recuperaImagen(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return FutureBuilder(future: usuario_provider.getImagen(snapshot.data.toString()),
+                          builder: (context, snapshot2) {
+                            if(snapshot2.hasData){
+                              return CircleAvatar( radius: 10.0,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage:(NetworkImage(snapshot2.data.toString(),
+
+                                  )));
+                            }
+                            else {
+                              return CircularProgressIndicator();
+                            }
+                          });
+
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
               ),
+
+              accountName: FutureBuilder<String>(
+                  future: usuario_provider.recuperaNombre(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Text("Bienvenido "+ snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
+              ),
+              accountEmail: Text(datosuser.email),
+
               decoration: BoxDecoration(
-                color: Colors.blue,
-                image: DecorationImage(
-                    fit: BoxFit.fill,
-                    image: NetworkImage(
-                        'https://oflutter.com/wp-content/uploads/2021/02/profile-bg3.jpg')),
+
+                  gradient:  LinearGradient(colors: <Color>[
+                    //Color.fromRGBO(29, 23, 91, 1.0),
+                    Colors.blue,
+                    Colors.blueGrey,
+
+                  ])
+
               ),
             ),
             ListTile(
@@ -193,15 +212,16 @@ int tt=0;
               onTap: () => _navigateMisAnuncios(),
             ),
             ListTile(
-              leading: Icon(Icons.share),
+              leading: Icon(Icons.request_page),
               title: Text('Mis Solicitudes'),
-              onTap: () => null,
+              onTap: () => _navigateMisSolicitudes(),
             ),
             ListTile(
-              leading: Icon(Icons.notifications),
+              leading: Icon(Icons.chat),
               title: Text('Chats'),
+              onTap: () => _navigateChat(),
             ),
-            Divider(),
+
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Mi Perfil'),
@@ -210,14 +230,38 @@ int tt=0;
             ListTile(
               leading: Icon(Icons.description),
               title: Text('Ránking'),
-              onTap: () => null,
+              onTap: () => _navigateRanking(),
+            ),
+            ListTile(
+              title: Text('Aviso Legal'),
+              leading: Icon(Icons.help),
+              onTap: () => _navigateAviso(),
             ),
             Divider(),
             ListTile(
-              title: Text('Cerrar Sesión'),
-              leading: Icon(Icons.exit_to_app),
-              onTap: () => null,
+                title: Text('Cerrar Sesión'),
+                leading: Icon(Icons.exit_to_app),
+                onTap: () {
+                  final _prefs = new DataUser();
+                  // _timer.cancel();
+                  _prefs.token = '';
+                  _prefs.email = '';
+                  _prefs.refreshtoken = '';
+                  _prefs.name='';
+                  _prefs.nuser='';
+                  _prefs.puntos=0;
+
+
+
+                  _signOut();
+
+                  //_navigateLogin();
+
+                }
+
             ),
+
+
           ],
         ),
       ),
@@ -244,10 +288,25 @@ int tt=0;
                     ),
                       child:
                       Row(
+
                         children: [
                           Padding(padding: const EdgeInsets.all(2.0),
                           ),
-                          Text(us.Puntos.toString(),style: TextStyle(fontSize: 16),), Icon(Icons.monetization_on),
+
+                          //Text(datosuser.puntos.toString(),style: TextStyle(fontSize: 16),),
+                          FutureBuilder(
+                              future: usuario_provider.recuperaPuntos2(datosuser.email),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Text(snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                                }
+                                else {
+                                  return CircularProgressIndicator();
+                                }
+                              }
+                          ),
+
+                          Icon(Icons.monetization_on),
                         ],
                       ),
                     ),
@@ -267,25 +326,10 @@ int tt=0;
                       (BuildContext context1, AsyncSnapshot<DocumentSnapshot> snapshot1) {
                     if (snapshot1.hasData) {
 
-                      return StreamBuilder<QuerySnapshot>(
-                        stream: usuario_provider.getUsersSol("ihugi"),
-                        builder:  (BuildContext context2, AsyncSnapshot<QuerySnapshot> snapshot2) {
-                          if (snapshot2.hasData) {
-                            return PageView.builder(
+                      return PageView.builder(
 
-                              itemCount: 1,
-                              itemBuilder: (context, i) => _cargarDatosAnuncio(context, snapshot1.data),
-
-
-
-                            );
-
-                          } else {
-                            return Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-                        },
+                        itemCount: 1,
+                        itemBuilder: (context, i) => _cargarDatosAnuncio(context, snapshot1.data),
 
 
 
@@ -304,11 +348,16 @@ int tt=0;
 
               ),
 
-        Container(
-          child: Text("Solicitantes:"),
-        ),
+              Padding(
+                padding: EdgeInsets.all(5),
+              ),
 
-        Flexible (
+              Container(
+                child: Text("Solicitantes:",style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),),
+              ),
+
+
+              Flexible (
             fit: FlexFit.tight,
           child: StreamBuilder (
             key: Key("${Random().nextDouble()}"),
@@ -533,9 +582,13 @@ int tt=0;
   Widget _cargarDatosAnuncio2(BuildContext context, QueryDocumentSnapshot usuarios, DocumentSnapshot soli){
 
     //_refresh();
+
+
     if(soli.get("NSol")==''){
+
       return GestureDetector(
         key: UniqueKey(),
+
 
         child:
         Container(
@@ -751,7 +804,11 @@ else{
                                ElevatedButton(onPressed: (){
                                  tt=usuarios.get("Puntos") +int.parse(soli.get("Puntos"));
                                   usuario_provider.updatePuntos(usuarios.id, tt);
+                                  int contador=usuarios.get("NFavores")+1;
+                                  usuario_provider.updateFavores(usuarios.id, contador);
+                                  print(contador.toString());
                                   solicitud_provider.FinalizarFavor(soli.reference.id,"Finalizado");
+                                  _navigateMisAnuncios();
                                }, child: Text("Finalizar Favor"))
                                 //SizedBox(width: 1), // give it width
 
@@ -1094,6 +1151,43 @@ Widget _cargarDatos2(BuildContext context, QueryDocumentSnapshot usuario){
 
 
 
+  }
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushNamed(context, 'login');
+
+  }
+  void _navigateMisSolicitudes(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => MisSolicitudes(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateChat(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => ChatList(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateAviso(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => Aviso(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateRanking(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => RankingPage(),
+    )).then( (var value) {
+      _refresh();
+    });
   }
 
 

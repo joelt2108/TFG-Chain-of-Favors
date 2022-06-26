@@ -1,5 +1,6 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'package:flutter/material.dart';
@@ -11,32 +12,22 @@ import 'package:tfgflutter/src/provider/user_provider.dart';
 import 'package:tfgflutter/src/solicitud.dart';
 
 import 'dart:async';
+import 'avisolegal.dart';
+import 'chatlist.dart';
 import 'controller/userdata.dart' as ud;
 
 
+import 'controller/userdata.dart';
 import 'home.dart';
+import 'mis_solicitudes.dart';
 import 'misanuncios.dart';
 
 
 int counter=0;
 
-class RankingPage extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
 
-        primarySwatch: Colors.blue,
-      ),
-      home: MyRankingPage(title: 'Tablón de Anuncios'),
-    );
-  }
-}
-
-class MyRankingPage extends StatefulWidget {
-  MyRankingPage({Key key, this.title}) : super(key: key);
+class RankingPage extends StatefulWidget {
+  RankingPage({Key key, this.title}) : super(key: key);
 
   final String title;
   Timer _timer;
@@ -46,7 +37,7 @@ class MyRankingPage extends StatefulWidget {
   _MyRankingPageState createState() => _MyRankingPageState();
 }
 
-class _MyRankingPageState extends State<MyRankingPage> {
+class _MyRankingPageState extends State<RankingPage> {
   Solicitud_Provider solicitud_provider= new Solicitud_Provider();
   Usuario_Provider usuario_provider= new Usuario_Provider();
   Icon customIcon = const Icon(Icons.search);
@@ -108,27 +99,56 @@ class _MyRankingPageState extends State<MyRankingPage> {
       drawer: Drawer(
         child: ListView(
           // Remove padding
-          padding: EdgeInsets.zero,
+
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text('Oflutter.com'),
-              accountEmail: Text('example@gmail.com'),
-              currentAccountPicture: CircleAvatar(
-                child: ClipOval(
-                  child: Image.network(
-                    'https://e1.pngegg.com/pngimages/976/873/png-clipart-orb-os-x-icon-man-s-profile-icon-inside-white-circle.png',
-                    fit: BoxFit.cover,
-                    width: 90,
-                    height: 90,
-                  ),
-                ),
+              currentAccountPicture:FutureBuilder<String>(
+                  future: usuario_provider.recuperaImagen(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return FutureBuilder(future: usuario_provider.getImagen(snapshot.data.toString()),
+                          builder: (context, snapshot2) {
+                            if(snapshot2.hasData){
+                              return CircleAvatar( radius: 10.0,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage:(NetworkImage(snapshot2.data.toString(),
+
+                                  )));
+                            }
+                            else {
+                              return CircularProgressIndicator();
+                            }
+                          });
+
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
               ),
+
+              accountName: FutureBuilder<String>(
+                  future: usuario_provider.recuperaNombre(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Text("Bienvenido "+ snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
+              ),
+              accountEmail: Text(datosuser.email),
+
               decoration: BoxDecoration(
-                color: Colors.blue,
-                image: DecorationImage(
-                    fit: BoxFit.fill,
-                    image: NetworkImage(
-                        'https://oflutter.com/wp-content/uploads/2021/02/profile-bg3.jpg')),
+
+                  gradient:  LinearGradient(colors: <Color>[
+                    //Color.fromRGBO(29, 23, 91, 1.0),
+                    Colors.blue,
+                    Colors.blueGrey,
+
+                  ])
+
               ),
             ),
             ListTile(
@@ -142,15 +162,16 @@ class _MyRankingPageState extends State<MyRankingPage> {
               onTap: () => _navigateMisAnuncios(),
             ),
             ListTile(
-              leading: Icon(Icons.share),
+              leading: Icon(Icons.request_page),
               title: Text('Mis Solicitudes'),
-              onTap: () => null,
+              onTap: () => _navigateMisSolicitudes(),
             ),
             ListTile(
-              leading: Icon(Icons.notifications),
+              leading: Icon(Icons.chat),
               title: Text('Chats'),
+              onTap: () => _navigateChat(),
             ),
-            Divider(),
+
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Mi Perfil'),
@@ -159,14 +180,38 @@ class _MyRankingPageState extends State<MyRankingPage> {
             ListTile(
               leading: Icon(Icons.description),
               title: Text('Ránking'),
-              onTap: () => null,
+              onTap: () => _navigateRanking(),
+            ),
+            ListTile(
+              title: Text('Aviso Legal'),
+              leading: Icon(Icons.help),
+              onTap: () => _navigateAviso(),
             ),
             Divider(),
             ListTile(
-              title: Text('Cerrar Sesión'),
-              leading: Icon(Icons.exit_to_app),
-              onTap: () => null,
+                title: Text('Cerrar Sesión'),
+                leading: Icon(Icons.exit_to_app),
+                onTap: () {
+                  final _prefs = new DataUser();
+                  // _timer.cancel();
+                  _prefs.token = '';
+                  _prefs.email = '';
+                  _prefs.refreshtoken = '';
+                  _prefs.name='';
+                  _prefs.nuser='';
+                  _prefs.puntos=0;
+
+
+
+                  _signOut();
+
+                  //_navigateLogin();
+
+                }
+
             ),
+
+
           ],
         ),
       ),
@@ -194,10 +239,25 @@ class _MyRankingPageState extends State<MyRankingPage> {
                     ),
                       child:
                       Row(
+
                         children: [
                           Padding(padding: const EdgeInsets.all(2.0),
                           ),
-                          Text(us.Puntos.toString(),style: TextStyle(fontSize: 16),), Icon(Icons.monetization_on),
+
+                          //Text(datosuser.puntos.toString(),style: TextStyle(fontSize: 16),),
+                          FutureBuilder(
+                              future: usuario_provider.recuperaPuntos2(datosuser.email),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Text(snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                                }
+                                else {
+                                  return CircularProgressIndicator();
+                                }
+                              }
+                          ),
+
+                          Icon(Icons.monetization_on),
                         ],
                       ),
                     ),
@@ -208,21 +268,32 @@ class _MyRankingPageState extends State<MyRankingPage> {
                 ),
               ),
 
+
       Padding(
         padding: const EdgeInsets.all(5.0)
     ),
-              Container(
-                child:
-                Align(
-                  alignment: Alignment.topRight,
-                  child:
-                  Text("Nº Favores:",style:TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15
-                  ),),
-                ),
+              SingleChildScrollView(child: Container(
 
-              ),
+                  child:
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text("Pos.",style: TextStyle(fontWeight: FontWeight.bold),),
+                      Padding(padding: EdgeInsets.only(right: 3)),
+
+                      Text("Usuario",style: TextStyle(fontWeight: FontWeight.bold),),
+                      Padding(padding: EdgeInsets.only(left: 1)),
+
+                      Text("Provincia",style: TextStyle(fontWeight: FontWeight.bold),),
+
+
+                      Text("Nº Favores",style: TextStyle(fontWeight: FontWeight.bold),)
+
+                    ],)
+
+              ) ,),
+
+
               Flexible(
                 fit: FlexFit.tight,
                 child: StreamBuilder(
@@ -233,6 +304,7 @@ class _MyRankingPageState extends State<MyRankingPage> {
                        i=0;
                       return ListView.builder(
                         itemCount: snapshot.data.docs.length,
+                        shrinkWrap: true,
                         itemBuilder: (context, index) =>
 
                           _cargarDatos(context, snapshot.data.docs[index],index+1),
@@ -279,10 +351,12 @@ class _MyRankingPageState extends State<MyRankingPage> {
 
       child:
       Container(
-
+          //alignment: Alignment.center,
           padding: const EdgeInsets.all(5.0),
           child:
           Container(
+              //alignment: Alignment.center,
+
               decoration: BoxDecoration(
                 color: Colors.white70,
                 border: Border.all(
@@ -291,14 +365,12 @@ class _MyRankingPageState extends State<MyRankingPage> {
                 borderRadius: BorderRadius.circular(10.0),
               ),
 
-              child:Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-
-                  children: <Widget>[
+              child:
 
                     Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      //crossAxisAlignment: CrossAxisAlignment.center,
+                      //mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                       children: <Widget>[
                         Padding(
@@ -311,7 +383,7 @@ class _MyRankingPageState extends State<MyRankingPage> {
                           padding: const EdgeInsets.only(left: 10, bottom: 10),
 
                           child:Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 
                             children: [
                               Text( index.toString() + "º "),
@@ -334,18 +406,19 @@ class _MyRankingPageState extends State<MyRankingPage> {
                                   }
                               ),
                               Container(
-                                  margin: const EdgeInsets.only(left: 20.0),
+                                  margin: const EdgeInsets.only(left: 5.0),
                                   child:Text('${usuarios.get('NUser')}',
                                     style: TextStyle(
                                         fontSize:18.0,
                                         fontWeight: FontWeight.bold),
                                   )
                               ),
+
                               Padding(
                                   padding: const EdgeInsets.all(1.0)
                               ),
                               Container(
-                                  margin: const EdgeInsets.only(left: 20.0),
+                                  margin: const EdgeInsets.only(left: 10.0),
                                   child:Text('${usuarios.get('Poblacion')}',
                                       style: TextStyle(
                                         fontSize:18.0,)
@@ -353,17 +426,21 @@ class _MyRankingPageState extends State<MyRankingPage> {
                                   )
                               ),
                               Padding(
-                                padding: EdgeInsets.only(right: 100.0),
+                                padding: const EdgeInsets.all(15),
+
                               ),
-                              Container(
-                                  alignment: Alignment.topRight,
-                                  child:
-                                  Text('${usuarios.get('NFavores')}',
-                                        style: TextStyle(
-                                          fontSize:18.0,)
-                                      //fontWeight: FontWeight.bold),
-                                    ) ,
-                                  )
+
+
+
+                              Text('${usuarios.get('NFavores')}',
+                                              style: TextStyle(
+                                                fontSize:18.0,)
+                                            //fontWeight: FontWeight.bold),
+                                          ) ,
+
+
+
+
 
 
                             ],
@@ -377,8 +454,8 @@ class _MyRankingPageState extends State<MyRankingPage> {
                       ],
                     ),
 
-                  ]
-              ))
+
+              )
       ),
       onTap: () {
 
@@ -398,11 +475,47 @@ class _MyRankingPageState extends State<MyRankingPage> {
       _refresh();
     });
   }
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushNamed(context, 'login');
 
+  }
   void _navigateDetallesAnuncio(String email){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
-      builder: (context) => MyDetallesAnuncios(email),
+      builder: (context) => DetallesAnuncios(email),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateMisSolicitudes(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => MisSolicitudes(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateChat(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => ChatList(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateAviso(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => Aviso(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateRanking(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => RankingPage(),
     )).then( (var value) {
       _refresh();
     });

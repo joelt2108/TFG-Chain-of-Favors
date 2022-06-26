@@ -1,4 +1,6 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'controller/userdata.dart' as ud;
 import 'package:tfgflutter/main.dart';
@@ -33,6 +35,7 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
   Usuario usuario=new Usuario();
   bool _saved=false;
   bool isChecked=false;
+  bool menor=false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _success;
@@ -56,7 +59,7 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                         children: <Widget>[
                           SafeArea(
                             child: Container(
-                              height: 180.0,
+                              //height: 180.0,
                             ),
                           ),
                           Form(
@@ -81,11 +84,14 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                     ]),
                                 child: Column(
                                     children: <Widget>[
-
+                                      Text("Formulario de Registro",style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),),
 
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: <Widget>[
+
+
+                                          Padding(padding: EdgeInsets.all(5)),
                                           Text("Nombre"),
                                           TextFormField(
                                             decoration: InputDecoration(
@@ -95,7 +101,7 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
 
                                             validator: (String value) {
                                               if (value.isEmpty) {
-                                                return ;
+                                                return ("Debes introducir tu nombre");
                                               }
                                               return null;
                                             },
@@ -107,6 +113,9 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                             controller: _apellidoController,
                                             onChanged: (value) => usuario.Apellido = value,
                                             validator: (String value) {
+                                              if (value.isEmpty) {
+                                                return ("Debes introducir tus apellidos");
+                                              }
                                               return null;
                                             },
                                           ),
@@ -116,6 +125,9 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                             ),
                                             controller: _emailController,
                                             validator: (String value) {
+                                              if (value.isEmpty) {
+                                                return ("Debes introducir un email válido");
+                                              }
                                               return null;
                                             },
                                           ),
@@ -127,6 +139,7 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                             ),
                                             validator: (String value) {
                                               if (value.isEmpty) {
+                                                return ("Debes introducir una contraseña válida");
                                               }
                                               return null;
                                             },
@@ -138,6 +151,9 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                             controller: _nuserController,
                                             onChanged: (value) => usuario.NUser = value,
                                             validator: (String value) {
+                                              if (value.isEmpty) {
+                                                return ("Debes introducir un nombre de usuario");
+                                              }
                                               return null;
                                             },
                                           ),
@@ -149,6 +165,7 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                             ),
                                             validator: (String value) {
                                               if (value.isEmpty) {
+                                                return ("Debes introducir tu provincia");
                                               }
                                               return null;
                                             },
@@ -168,12 +185,22 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                                 int dia= today.day - value.day;
                                                 controller.text =
                                                 '${value.day.toString()}/${value.month.toString()}/${value.year.toString()}';
+                                                if(value.year>2005){
+                                                  menor=true;
+                                                }
+                                                else{
+                                                  menor=false;
+                                                }
+
+
                                               });
                                             },
                                             child: TextField(
                                               controller: this.controller,
                                               enabled: false,
+
                                             ),
+
                                           ),
                                           Text("DNI"),
                                           TextFormField(
@@ -182,6 +209,9 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                             controller: _dniController,
                                             onChanged: (value) => usuario.DNI = value,
                                             validator: (String value) {
+                                              if (value.isEmpty) {
+                                                return ("Debes introducir tu DNI");
+                                              }
                                               return null;
                                             },
                                           ),
@@ -220,13 +250,17 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
                                           Container(
                                             padding: const EdgeInsets.symmetric(vertical: 16.0),
                                             alignment: Alignment.center,
-                                            child: RaisedButton(
-                                              onPressed: () async {
-                                                if (_formKey.currentState.validate()) {
-                                                  _register();
-                                                }
-                                              },
-                                              child:  Text("Siguiente"),
+                                            child: SizedBox(
+                                              width: 300.0,
+                                              height: 50.0,
+                                              child:  ElevatedButton(
+                                                onPressed: () async {
+                                                  if (_formKey.currentState.validate()) {
+                                                    _register();
+                                                  }
+                                                },
+                                                child:  Text("Registrarse"),
+                                              ),
                                             ),
                                           ),
 
@@ -256,58 +290,69 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
   void _register() async {
     if(isChecked==true){
 
-      try {
-        final User user = (await
-        _auth.createUserWithEmailAndPassword(
-          email: _emailController.text,
-          password: _passwordController.text,
-        )
-        ).user;
-        if (user != null) {
-          setState(() async {
-            _success = true;
-            ud.DataUser datosuser = ud.DataUser();
-            usuario.Image="https://www.nicepng.com/png/detail/128-1280406_view-user-icon-png-user-circle-icon-png.png";
+      if(menor==false){
+
+        try {
+          final User user = (await
+          _auth.createUserWithEmailAndPassword(
+            email: _emailController.text,
+            password: _passwordController.text,
+          )
+          ).user;
+          if (user != null) {
+            setState(() async {
+              _success = true;
+              ud.DataUser datosuser = ud.DataUser();
+              usuario.Image="profileicon.jpg";
 
 
-            _userEmail = user.email;
-            final token = await user.getIdToken();
-            datosuser.token = token.toString();
-            datosuser.email=_emailController.text;
-            datosuser.refreshtoken=user.refreshToken;
-            datosuser.name=_nombreController.text;
-            usuario.Solicitudes=[];
-            _success = true;
-            _userEmail = user.email;
-            usuario.id=datosuser.email;
-            usuario.Chats= [];
-            Usuario_Provider upr = new Usuario_Provider();
-            upr.saveUsuario(usuario);
+              _userEmail = user.email;
+              final token = await user.getIdToken();
+              datosuser.token = token.toString();
+              datosuser.email=_emailController.text;
+              datosuser.refreshtoken=user.refreshToken;
+              datosuser.name=_nombreController.text;
+              datosuser.nuser=_nuserController.text;
+              datosuser.puntos=100;
+              usuario.Solicitudes=[];
+              _success = true;
+              _userEmail = user.email;
+              usuario.id=datosuser.email;
+              usuario.Chats= [];
+              Usuario_Provider upr = new Usuario_Provider();
+              upr.saveUsuario(usuario);
 
+
+              setState(() {
+                _saved = true;
+              });
+              Navigator.of(context)
+                  .push(MaterialPageRoute<void>(
+                builder: (context) => LoginPage(),
+              )).then( (var value) {
+              });
+
+            });
 
             setState(() {
-              _saved = true;
+              _success = true;
             });
-            Navigator.of(context)
-                .push(MaterialPageRoute<void>(
-              builder: (context) => LoginPage(),
-            )).then( (var value) {
-            });
+          }
+        } on FirebaseAuthException catch  (e) {
+          if (e.code == 'invalid-email') {
+            mostrarAviso(context, "El mail introducido no es válido, por favor, seleccione otro");
 
-          });
+          }else{
+            mostrarAviso(context, "Ha ocurrido un error, por favor, intentelo más tarde");
 
-          setState(() {
-            _success = true;
-          });
-        }
-      } on FirebaseAuthException catch  (e) {
-        if (e.code == 'invalid-email') {
-          Text("Formato invalido");
-          // Do something :D
-        }else{
-          Text("Ha ocurrido un error");
+          }
         }
       }
+      else{
+        mostrarAviso(context, "Lo sentimos, pero debes ser mayor de 16 años para poder utilizar la herramienta");
+      }
+
+
 
     }
     else{
@@ -320,12 +365,12 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
     final size = MediaQuery.of(context).size;
 
     final fondoMorado = Container(
-      height: size.height * 0.4,
+      height: size.height,
       width: double.infinity,
       decoration: BoxDecoration(
           gradient: LinearGradient(colors: <Color>[
-            Color.fromRGBO(63, 63, 156, 1.0),
-            Color.fromRGBO(90, 70, 178, 1.0)
+            Colors.amberAccent,
+            Colors.blueGrey,
           ])),
     );
 
@@ -346,12 +391,10 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
         Positioned(bottom: 120.0, right: 20.0, child: circulo),
         Positioned(bottom: -50.0, left: -20.0, child: circulo),
         Container(
-          padding: EdgeInsets.only(top: 80.0),
+          //padding: EdgeInsets.only(top: 80.0),
           child: Column(
             children: <Widget>[
-              SizedBox(height: 10.0, width: double.infinity),
-              Text('Registro',
-                  style: TextStyle(color: Colors.white, fontSize: 25.0))
+
             ],
           ),
         )
@@ -363,21 +406,23 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
     return (await showDialog(
       context: context,
       builder: (context) => new AlertDialog(
-        title: new Text("Estas seguro?"),
-        content: new Text("Tal"),
+        title: new Text("¿Salir?"),
+        content: new Text("Aún no has completado el proceso de registro, ¿Estás seguro?"),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: new Text("No"),
           ),
           TextButton(
-            onPressed: () =>  Navigator.pushNamed(context, 'log'),
+            onPressed: () =>  Navigator.pushNamed(context, 'login'),
             child: new Text("Sí"),
           ),
         ],
       ),
     )) ?? false;
   }
+
+
 
   Future<bool> Terminos() async {
     return (await showDialog(
@@ -464,6 +509,21 @@ class _RegisterEmailSectionState extends State<RegistroPage> {
   }
   void _refresh() async {
     setState(() {});
+  }
+
+  void mostrarAviso(BuildContext context, String mensaje) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Alerta'),
+            content: Text(mensaje),
+            actions: <Widget>[
+              FlatButton(
+                  onPressed: () => Navigator.of(context).pop(), child: Text('Ok'))
+            ],
+          );
+        });
   }
 
   void _validateRegister(){

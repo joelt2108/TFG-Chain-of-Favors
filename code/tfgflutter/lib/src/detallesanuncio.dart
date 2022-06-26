@@ -10,14 +10,19 @@ import 'package:tfgflutter/src/model/user_model.dart';
 import 'package:tfgflutter/src/provider/chat_provider.dart';
 import 'package:tfgflutter/src/provider/solicitud_provider.dart';
 import 'package:tfgflutter/src/provider/user_provider.dart';
+import 'package:tfgflutter/src/ranking.dart';
 import 'package:tfgflutter/src/solicitud.dart';
 
 import 'dart:async';
+import 'avisolegal.dart';
 import 'chat.dart';
+import 'chatlist.dart';
 import 'controller/userdata.dart' as ud;
 
 
+import 'controller/userdata.dart';
 import 'home.dart';
+import 'mis_solicitudes.dart';
 import 'misanuncios.dart';
 import 'model/chat_model.dart';
 
@@ -32,23 +37,10 @@ List<String> listahelp2=[];
 final usuarioProvider = new Usuario_Provider();
 
 
-class DetalleAnuncio extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
 
-        primarySwatch: Colors.blue,
-      ),
-      home: MyDetallesAnuncios(datosuser.email,title: 'Tablón de Anuncios'),
-    );
-  }
-}
 
-class MyDetallesAnuncios extends StatefulWidget {
-  MyDetallesAnuncios(this.email, {Key key, this.title}) : super(key: key);
+class DetallesAnuncios extends StatefulWidget {
+  DetallesAnuncios(this.email, {Key key, this.title}) : super(key: key);
 
   final String title;
   final String email;
@@ -59,7 +51,7 @@ class MyDetallesAnuncios extends StatefulWidget {
   _MyDetallesAnunciosPage createState() => _MyDetallesAnunciosPage();
 }
 
-class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
+class _MyDetallesAnunciosPage extends State<DetallesAnuncios> {
   Solicitud_Provider solicitud_provider= new Solicitud_Provider();
   Usuario_Provider usuario_provider= new Usuario_Provider();
   final usuarioProvider = new Usuario_Provider();
@@ -126,6 +118,8 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
+
+
     return Scaffold(
       backgroundColor: Colors.white70,
 
@@ -140,27 +134,56 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
       drawer: Drawer(
         child: ListView(
           // Remove padding
-          padding: EdgeInsets.zero,
+
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text('Oflutter.com'),
-              accountEmail: Text('example@gmail.com'),
-              currentAccountPicture: CircleAvatar(
-                child: ClipOval(
-                  child: Image.network(
-                    'https://e1.pngegg.com/pngimages/976/873/png-clipart-orb-os-x-icon-man-s-profile-icon-inside-white-circle.png',
-                    fit: BoxFit.cover,
-                    width: 90,
-                    height: 90,
-                  ),
-                ),
+              currentAccountPicture:FutureBuilder<String>(
+                  future: usuario_provider.recuperaImagen(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return FutureBuilder(future: usuario_provider.getImagen(snapshot.data.toString()),
+                          builder: (context, snapshot2) {
+                            if(snapshot2.hasData){
+                              return CircleAvatar( radius: 10.0,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage:(NetworkImage(snapshot2.data.toString(),
+
+                                  )));
+                            }
+                            else {
+                              return CircularProgressIndicator();
+                            }
+                          });
+
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
               ),
+
+              accountName: FutureBuilder<String>(
+                  future: usuario_provider.recuperaNombre(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Text("Bienvenido "+ snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
+              ),
+              accountEmail: Text(datosuser.email),
+
               decoration: BoxDecoration(
-                color: Colors.blue,
-                image: DecorationImage(
-                    fit: BoxFit.fill,
-                    image: NetworkImage(
-                        'https://oflutter.com/wp-content/uploads/2021/02/profile-bg3.jpg')),
+
+                  gradient:  LinearGradient(colors: <Color>[
+                    //Color.fromRGBO(29, 23, 91, 1.0),
+                    Colors.blue,
+                    Colors.blueGrey,
+
+                  ])
+
               ),
             ),
             ListTile(
@@ -174,15 +197,16 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
               onTap: () => _navigateMisAnuncios(),
             ),
             ListTile(
-              leading: Icon(Icons.share),
+              leading: Icon(Icons.request_page),
               title: Text('Mis Solicitudes'),
-              onTap: () => null,
+              onTap: () => _navigateMisSolicitudes(),
             ),
             ListTile(
-              leading: Icon(Icons.notifications),
+              leading: Icon(Icons.chat),
               title: Text('Chats'),
+              onTap: () => _navigateChat(),
             ),
-            Divider(),
+
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Mi Perfil'),
@@ -191,14 +215,38 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
             ListTile(
               leading: Icon(Icons.description),
               title: Text('Ránking'),
-              onTap: () => null,
+              onTap: () => _navigateRanking(),
+            ),
+            ListTile(
+              title: Text('Aviso Legal'),
+              leading: Icon(Icons.help),
+              onTap: () => _navigateAviso(),
             ),
             Divider(),
             ListTile(
-              title: Text('Cerrar Sesión'),
-              leading: Icon(Icons.exit_to_app),
-              onTap: () => null,
+                title: Text('Cerrar Sesión'),
+                leading: Icon(Icons.exit_to_app),
+                onTap: () {
+                  final _prefs = new DataUser();
+                  // _timer.cancel();
+                  _prefs.token = '';
+                  _prefs.email = '';
+                  _prefs.refreshtoken = '';
+                  _prefs.name='';
+                  _prefs.nuser='';
+                  _prefs.puntos=0;
+
+
+
+                  _signOut();
+
+                  //_navigateLogin();
+
+                }
+
             ),
+
+
           ],
         ),
       ),
@@ -226,10 +274,25 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
                     ),
                       child:
                       Row(
+
                         children: [
                           Padding(padding: const EdgeInsets.all(2.0),
                           ),
-                          Text(us.Puntos.toString(),style: TextStyle(fontSize: 16),), Icon(Icons.monetization_on),
+
+                          //Text(datosuser.puntos.toString(),style: TextStyle(fontSize: 16),),
+                          FutureBuilder(
+                              future: usuario_provider.recuperaPuntos2(datosuser.email),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Text(snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                                }
+                                else {
+                                  return CircularProgressIndicator();
+                                }
+                              }
+                          ),
+
+                          Icon(Icons.monetization_on),
                         ],
                       ),
                     ),
@@ -239,7 +302,6 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
 
                 ),
               ),
-
 
 
               //camBIAAAA
@@ -359,7 +421,7 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
                                   padding: const EdgeInsets.all(6.0)
                               ),
 
-                              Text(solicitud.get("Titulo"),style: TextStyle( fontSize: 20, fontWeight: FontWeight.bold
+                              Text(solicitud.get("Titulo"),style: TextStyle( fontSize: 24, fontWeight: FontWeight.bold
                               )
                                   //usuario.Nombre = solicitud.get('Nombre'),
                                   //onChanged: (value) => usuario.Nombre = value,
@@ -367,16 +429,20 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
                               ),
 
                               Padding(
-                                  padding: const EdgeInsets.all(10.0)
+                                  padding: const EdgeInsets.all(15.0)
                               ),
-                              Text(solicitud.get("Descripcion")),
+                              Text(solicitud.get("Descripcion"),style: TextStyle(fontSize: 20
+                              ),),
 
                               Padding(
-                                  padding: const EdgeInsets.all(10.0)
+                                  padding: const EdgeInsets.all(15.0)
                               ),
-                              Text("Provincia: " + solicitud.get("Poblacion")),
+                              Text("Provincia: " + solicitud.get("Poblacion"),style: TextStyle(fontSize: 18),),
+                              Padding(
+                                  padding: const EdgeInsets.all(3.0)
+                              ),
                               Row(children: [
-                                Text("Puntos ofrecidos: " + solicitud.get("Puntos")),
+                                Text("Puntos ofrecidos: " + solicitud.get("Puntos"),style: TextStyle(fontSize: 18),),
                                 Icon(Icons.monetization_on),
 
                               ],),
@@ -407,7 +473,7 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
                                 ],
                               ),
                               Padding(
-                                  padding: const EdgeInsets.all(15.0)
+                                  padding: const EdgeInsets.all(45.0)
                               ),
                               Row(
 
@@ -530,11 +596,83 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
       _refresh();
     });
   }
+  Future<T> pushPage<T>(BuildContext context, Widget page) {
+    return Navigator.of(context)
+        .push<T>(MaterialPageRoute(builder: (context) => page));
+  }
+  Future<bool> _onWillPop() async {
+    return (await showDialog(
+      context: context,
+      builder: (context) => new AlertDialog(
+        title: new Text("¿Salir?"),
+        content: new Text("Aún no has completado el proceso de registro, ¿Estás seguro?"),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: new Text("No"),
+          ),
+          TextButton(
+            onPressed: () =>  Navigator.pushNamed(context, 'log'),
+            child: new Text("Sí"),
+          ),
+        ],
+      ),
+    )) ?? false;
+  }
 
+
+
+  Future<bool> Terminos() async {
+    return (await showDialog(
+      context: context,
+      builder: (context) => new AlertDialog(
+        title: new Text("Debes aceptar los Términos de servicio y la Política de privacidad para continuar"),
+
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: new Text("Ok"),
+          ),
+        ],
+      ),
+    )) ?? false;
+  }
   void _navigateHome(){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
       builder: (context) => HomePage(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateMisSolicitudes(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => MisSolicitudes(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateChat(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => ChatList(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateAviso(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => Aviso(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateRanking(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => RankingPage(),
     )).then( (var value) {
       _refresh();
     });
@@ -547,6 +685,14 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
       _refresh();
     });
   }
+
+
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushNamed(context, 'login');
+
+  }
+
 
   void _navigateOpenChat(String us1, String us2, String nuser){
     Navigator.of(context)
@@ -581,7 +727,10 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
       pr.updateSolicitudSolicitante(ele, rr,solicitud, listahelp);
       upr.updateSolicitudUser(usid,rr2,usuario, listahelp2);
 
-    Navigator.pop(context);
+    _showDialog(context:context, title:"Atención", msg: "Se ha enviado la solicitud correctamente. Consulta el apartado 'Mis Solicitudes' para seguir el estado "
+    "de tu petición");
+
+   _navigateHome();
 
   }
 
@@ -594,8 +743,36 @@ class _MyDetallesAnunciosPage extends State<MyDetallesAnuncios> {
     return lista;
   }
 
-  void createChat()async{
-   
+  void mostrarAviso(BuildContext context, String mensaje) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Alerta'),
+            content: Text(mensaje),
+            actions: <Widget>[
+              FlatButton(
+                  onPressed: () => Navigator.of(context).pop(), child: Text('Ok'))
+            ],
+          );
+        });
+  }
+
+  Future _showDialog({BuildContext context, String msg, String title}) async {
+    return await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(title),
+            content: Text(msg),
+            actions: [
+              FlatButton(
+                child: Text('Ok'),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          );
+        });
   }
   Future<List> recuperarNUsers(Stream<QuerySnapshot> us) async {
     int i=1;

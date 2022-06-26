@@ -28,7 +28,7 @@ void main(){
     expect(find.text("Descripción"),findsOneWidget);
     expect(find.text("Puntos ofrecidos"),findsOneWidget);
     expect(find.text("Publicar solicitud"),findsOneWidget);
-    expect(find.text("Contraseña"),findsOneWidget);
+    expect(find.text("Contraseña"),findsNothing);
 
     expect(find.text("Tablón de anuncios"),findsNothing);
 

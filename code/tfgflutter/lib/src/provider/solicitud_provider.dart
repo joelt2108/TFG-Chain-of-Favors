@@ -30,6 +30,18 @@ class Solicitud_Provider{
 
     });
   }
+
+  Future<void> updateSolicitud2Titulo(String id, Solicitud solicitud) {
+    _db.collection("Solicitud").doc(id).update({
+      'Titulo': solicitud.Titulo,
+      'Descripcion': solicitud.Descripcion,
+      'Poblacion': solicitud.Poblacion,
+      'Puntos': solicitud.Puntos,
+
+    });
+  }
+
+
   Future<void> updateok(String id, Solicitud solicitud) {
     _db.collection("Solicitud").doc(id).update({
       'NSol':solicitud.NSol,
@@ -138,7 +150,7 @@ Future<List>  getData(String id) async {
 
   Stream<QuerySnapshot> cargarSolicitudes() {
     //return _db.collection("Solicitud").where("hide",isEqualTo: false).snapshots();
-    return _db.collection("Solicitud").snapshots();
+    return _db.collection("Solicitud").where("Estado", isEqualTo: "Sin asignar").snapshots();
 
   }
 
@@ -184,7 +196,7 @@ Future<List>  getData(String id) async {
 
   Stream<QuerySnapshot> cargarMisAnuncios(String id) {
     //return _db.collection("Solicitud").where("hide",isEqualTo: false).snapshots();
-    return _db.collection("Solicitud").where('id',isEqualTo: id).snapshots();
+    return _db.collection("Solicitud").where('id',isEqualTo: id).where('Estado',isNotEqualTo: 'Finalizado').snapshots();
 
   }
 

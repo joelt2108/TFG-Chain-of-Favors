@@ -23,13 +23,22 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final prefs = new DataUser();
+    var iRoute = 'login';
+   if (prefs.token != '') {
+    iRoute = 'home';
+    }
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
+
       title: 'Cadena de Favores',
-      initialRoute: 'log',
+      initialRoute: iRoute,
       routes: {
-        'log':(BuildContext context) => LoginPage(),
+        'login':(BuildContext context) => LoginPage(),
         'registro':(BuildContext context) => RegistroPage(),
         'home': (BuildContext context) => HomePage(),
+
+
 
       },
       theme: ThemeData(

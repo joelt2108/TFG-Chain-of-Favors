@@ -7,6 +7,7 @@ import 'package:tfgflutter/main.dart';
 import 'package:tfgflutter/src/provider/user_provider.dart';
 import 'package:tfgflutter/src/provider/solicitud_provider.dart';
 
+import 'home.dart';
 import 'login.dart';
 import 'model/user_model.dart';
 import 'model/solicitud_model.dart';
@@ -35,11 +36,14 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
   final TextEditingController _descipcionController = TextEditingController();
   final TextEditingController _puntosController = TextEditingController();
   final TextEditingController _nuserController = TextEditingController();
+  ScrollController _scrollController = ScrollController();
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final usuarioProvider = new Usuario_Provider();
   //user.PreferenciasUsuario datosUser = user.PreferenciasUsuario();
   ud.DataUser datosuser = ud.DataUser();  
   List<dynamic> listaFinal;
+  int mispuntos;
 
 
   void initState() {
@@ -60,6 +64,8 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: Colors.white,
         appBar: AppBar(
 
           title: Row(
@@ -75,113 +81,198 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
 
           ],
         ),
-        body:SingleChildScrollView(
-
-            child:Container(
-
-
-                child:Form(child:
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 25),
-                      child: Text("Título", style:  const TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
-                      ),
+        body:
+        Center(child:
+          Column(
+            children: [
+              Container(
+                alignment: Alignment.topRight,
+                child:  AppBar(
+                  toolbarHeight: 30,
+                  backgroundColor: Colors.blueGrey,
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    Container( decoration: BoxDecoration(
+                      //color: Colors.black12, //puntitos
                     ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: TextField(
-                        controller: _tituloController,
-                        onChanged: (value) => solicitud.Titulo = value,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'Introduce un título...',
-                        ),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 25),
-                      child: Text("Descripción", style:  const TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: TextField(
-                        maxLines: 4,
-                        minLines: 4,
-                        controller: _descipcionController,
-                        onChanged: (value) => solicitud.Descripcion = value,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                          hintText: 'Cuéntanos que necesitas...',
+                      child:
+                      Row(
 
+                        children: [
+                          Padding(padding: const EdgeInsets.all(2.0),
+                          ),
 
-                        ),
-                        keyboardType: TextInputType.multiline,
+                          //Text(datosuser.puntos.toString(),style: TextStyle(fontSize: 16),),
+                          FutureBuilder(
+                              future: usuarioProvider.recuperaPuntos2(datosuser.email),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  mispuntos=snapshot.data;
+                                  return Text(snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                                }
+                                else {
+                                  return CircularProgressIndicator();
+                                }
+                              }
+                          ),
 
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 25),
-                      child: Text("Puntos ofrecidos", style:  const TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
-                      ),
-                    ),
-                    Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                    child:TextField(
-                      controller: _puntosController,
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) => solicitud.Puntos = value,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Introduce los puntos...',
+                          Icon(Icons.monetization_on),
+                        ],
                       ),
                     ),
 
-            ),
 
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 120, vertical: 40),
-                child: RaisedButton(
-                  onPressed: (){
-                      _uploadSolicitud();
-
-                  } ,
-                  child: new Text("Publicar solicitud", textAlign: TextAlign.center,
-                      ),
-                  color: Colors.lightBlue,
-                  textColor: Colors.white,
-                )
-              ),
                   ],
+
                 ),
-                )),
+              ),
+              SingleChildScrollView(
+                controller: _scrollController,
+
+                child:Container(
 
 
-        ));
+                    child:Form(child:
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 25),
+                          child: Text("Título", style:  const TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: TextField(
+                            controller: _tituloController,
+                            onChanged: (value) => solicitud.Titulo = value,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Introduce un título...',
+                            ),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 25),
+                          child: Text("Descripción", style:  const TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: TextField(
+                            maxLines: 4,
+                            minLines: 4,
+                            controller: _descipcionController,
+                            onChanged: (value) => solicitud.Descripcion = value,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Cuéntanos que necesitas...',
+
+
+                            ),
+                            keyboardType: TextInputType.multiline,
+
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 25),
+                          child: Text("Puntos ofrecidos", style:  const TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child:TextField(
+                            controller: _puntosController,
+                            keyboardType: TextInputType.number,
+                            onChanged: (value) => solicitud.Puntos = value,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Introduce los puntos...',
+                            ),
+                          ),
+
+                        ),
+
+                        Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 120, vertical: 40),
+                            child: RaisedButton(
+                              onPressed: (){
+                                _uploadSolicitud();
+
+                              } ,
+                              child: new Text("Publicar solicitud", textAlign: TextAlign.center,
+                              ),
+                              color: Colors.lightBlue,
+                              textColor: Colors.white,
+                            )
+                        ),
+                      ],
+                    ),
+                    )),
+
+
+              )
+            ],
+          ))
+
+
+        );
   }
 
   void _uploadSolicitud () async
   {
-    _rellenarItems();
-    ud.DataUser datosuser = ud.DataUser();
 
-    Solicitud_Provider pr = new Solicitud_Provider();
-    Usuario_Provider upr = new Usuario_Provider();
-    //upr.getUsuario(datosuser.email);
-    solicitud.id=datosuser.email;
- 
-    solicitud.NUser=listaFinal[0].get("NUser").toString();
-    solicitud.Poblacion=listaFinal[0].get("Poblacion").toString();
-    solicitud.Estado="Sin asignar";
-    solicitud.Search=parametersSearch(solicitud.Titulo);
-    solicitud.Image=listaFinal[0].get("Image").toString();
-    solicitud.Solicitantes=new List();
+      _rellenarItems();
+      if(int.parse(solicitud.Puntos)<= mispuntos)
+        {
+          ud.DataUser datosuser = ud.DataUser();
 
-    pr.saveSolicitud(solicitud);
-    Navigator.pop(context);
+          Solicitud_Provider pr = new Solicitud_Provider();
+          Usuario_Provider upr = new Usuario_Provider();
+          //upr.getUsuario(datosuser.email);
+          solicitud.id=datosuser.email;
+          var useer= await usuarioProvider.cargaUsuario(datosuser.email);
 
+          solicitud.NUser=useer.docs.first["NUser"].toString();
+          solicitud.Poblacion=useer.docs.first["Poblacion"].toString();
+          solicitud.Estado="Sin asignar";
+          solicitud.Search=parametersSearch(solicitud.Titulo);
+          solicitud.Image=useer.docs.first["Image"].toString();
+          solicitud.Solicitantes=new List();
+          //usuarioProvider.updatePuntos(, puntos)
+          QuerySnapshot querySnap = await FirebaseFirestore.instance.collection('Usuario').where('id',isEqualTo: datosuser.email).get();
+          QueryDocumentSnapshot doc = querySnap.docs[0];
+          DocumentReference docRef = doc.reference;
+          pr.saveSolicitud(solicitud);
+          int nuevospuntos=(mispuntos-int.parse(solicitud.Puntos));
+          usuarioProvider.updatePuntos(docRef.id,nuevospuntos );
+          print("no llego 1");
+
+          print("no llego 2");
+
+
+
+          mostrarAviso2(context, "Tu anuncio se ha publicado con éxito");
+          _navigateHome();
+
+        }
+      else{
+        mostrarAviso(context, "Lo sentimos, no tienes los puntos suficientes");
+      }
+
+
+
+
+
+  }
+
+  void _navigateHome(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => HomePage(),
+    )).then( (var value) {
+
+    });
   }
 
   Future<List> _rellenarItems() async {
@@ -251,6 +342,35 @@ class _CreateSolicitudState extends State<CreateSolicitud> {
     return caseSearchList;
   }
 }
+void mostrarAviso(BuildContext context, String mensaje) {
+  showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Alerta'),
+          content: Text(mensaje),
+          actions: <Widget>[
+            FlatButton(
+                onPressed: () => Navigator.of(context).pop(), child: Text('Ok'))
+          ],
+        );
+      });
+}
+void mostrarAviso2(BuildContext context, String mensaje) {
+  showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Enhorabuena'),
+          content: Text(mensaje),
+          actions: <Widget>[
+            FlatButton(
+                onPressed: () => Navigator.of(context).pop(), child: Text('Ok'))
+          ],
+        );
+      });
+}
+
 
 List<String> getSolicitantes(){
   return solicitud.Solicitantes;

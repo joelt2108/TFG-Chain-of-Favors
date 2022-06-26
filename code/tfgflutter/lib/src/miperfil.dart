@@ -8,7 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:tfgflutter/src/model/user_model.dart';
 import 'package:tfgflutter/src/provider/solicitud_provider.dart';
 import 'package:tfgflutter/src/provider/user_provider.dart';
+import 'package:tfgflutter/src/ranking.dart';
 import 'package:tfgflutter/src/solicitud.dart';
+import 'avisolegal.dart';
+import 'chatlist.dart';
 import 'controller/userdata.dart' as ud;
 import 'package:image_picker/image_picker.dart';
 import 'dart:ffi';
@@ -22,26 +25,14 @@ import 'package:flutter/material.dart';
 
 import 'dart:async';
 
+import 'controller/userdata.dart';
 import 'home.dart';
+import 'mis_solicitudes.dart';
 import 'misanuncios.dart';
 
-class PerfilPage extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
 
-        primarySwatch: Colors.blue,
-      ),
-      home: MiPerfilPage(title: 'Tablón de Anuncios'),
-    );
-  }
-}
-
-class MiPerfilPage extends StatefulWidget {
-  MiPerfilPage({Key key, this.title}) : super(key: key);
+class PerfilPage extends StatefulWidget {
+  PerfilPage({Key key, this.title}) : super(key: key);
 
 
   final String title;
@@ -52,7 +43,7 @@ class MiPerfilPage extends StatefulWidget {
   _MiPerfilPageState createState() => _MiPerfilPageState();
 }
 
-class _MiPerfilPageState extends State<MiPerfilPage> {
+class _MiPerfilPageState extends State<PerfilPage> {
   Usuario_Provider usuario_provider = new Usuario_Provider();
   Icon customIcon = const Icon(Icons.search);
   Widget customSearchBar = const Text('Mi Perfil');
@@ -108,27 +99,56 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
       drawer: Drawer(
         child: ListView(
           // Remove padding
-          padding: EdgeInsets.zero,
+
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text('Oflutter.com'),
-              accountEmail: Text('example@gmail.com'),
-              currentAccountPicture: CircleAvatar(
-                child: ClipOval(
-                  child: Image.network(
-                    'https://e1.pngegg.com/pngimages/976/873/png-clipart-orb-os-x-icon-man-s-profile-icon-inside-white-circle.png',
-                    fit: BoxFit.cover,
-                    width: 90,
-                    height: 90,
-                  ),
-                ),
+              currentAccountPicture:FutureBuilder<String>(
+                  future: usuario_provider.recuperaImagen(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return FutureBuilder(future: usuario_provider.getImagen(snapshot.data.toString()),
+                          builder: (context, snapshot2) {
+                            if(snapshot2.hasData){
+                              return CircleAvatar( radius: 10.0,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage:(NetworkImage(snapshot2.data.toString(),
+
+                                  )));
+                            }
+                            else {
+                              return CircularProgressIndicator();
+                            }
+                          });
+
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
               ),
+
+              accountName: FutureBuilder<String>(
+                  future: usuario_provider.recuperaNombre(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Text("Bienvenido "+ snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
+              ),
+              accountEmail: Text(datosuser.email),
+
               decoration: BoxDecoration(
-                color: Colors.blue,
-                image: DecorationImage(
-                    fit: BoxFit.fill,
-                    image: NetworkImage(
-                        'https://oflutter.com/wp-content/uploads/2021/02/profile-bg3.jpg')),
+
+                  gradient:  LinearGradient(colors: <Color>[
+                    //Color.fromRGBO(29, 23, 91, 1.0),
+                    Colors.blue,
+                    Colors.blueGrey,
+
+                  ])
+
               ),
             ),
             ListTile(
@@ -142,15 +162,16 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
               onTap: () => _navigateMisAnuncios(),
             ),
             ListTile(
-              leading: Icon(Icons.share),
+              leading: Icon(Icons.request_page),
               title: Text('Mis Solicitudes'),
-              onTap: () => null,
+              onTap: () => _navigateMisSolicitudes(),
             ),
             ListTile(
-              leading: Icon(Icons.notifications),
+              leading: Icon(Icons.chat),
               title: Text('Chats'),
+              onTap: () => _navigateChat(),
             ),
-            Divider(),
+
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Mi Perfil'),
@@ -159,14 +180,38 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
             ListTile(
               leading: Icon(Icons.description),
               title: Text('Ránking'),
-              onTap: () => null,
+              onTap: () => _navigateRanking(),
+            ),
+            ListTile(
+              title: Text('Aviso Legal'),
+              leading: Icon(Icons.help),
+              onTap: () => _navigateAviso(),
             ),
             Divider(),
             ListTile(
-              title: Text('Cerrar Sesión'),
-              leading: Icon(Icons.exit_to_app),
-              onTap: () => null,
+                title: Text('Cerrar Sesión'),
+                leading: Icon(Icons.exit_to_app),
+                onTap: () {
+                  final _prefs = new DataUser();
+                  // _timer.cancel();
+                  _prefs.token = '';
+                  _prefs.email = '';
+                  _prefs.refreshtoken = '';
+                  _prefs.name='';
+                  _prefs.nuser='';
+                  _prefs.puntos=0;
+
+
+
+                  _signOut();
+
+                  //_navigateLogin();
+
+                }
+
             ),
+
+
           ],
         ),
       ),
@@ -180,6 +225,47 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
         // in the middle of the parent.
         child: Column(
             children: <Widget>[
+
+              Container(
+                alignment: Alignment.topRight,
+                child:  AppBar(
+                  toolbarHeight: 30,
+                  backgroundColor: Colors.blueGrey,
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    Container( decoration: BoxDecoration(
+                      //color: Colors.black12, //puntitos
+                    ),
+                      child:
+                      Row(
+
+                        children: [
+                          Padding(padding: const EdgeInsets.all(2.0),
+                          ),
+
+                          //Text(datosuser.puntos.toString(),style: TextStyle(fontSize: 16),),
+                          FutureBuilder(
+                              future: usuario_provider.recuperaPuntos2(datosuser.email),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Text(snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                                }
+                                else {
+                                  return CircularProgressIndicator();
+                                }
+                              }
+                          ),
+
+                          Icon(Icons.monetization_on),
+                        ],
+                      ),
+                    ),
+
+
+                  ],
+
+                ),
+              ),
               Flexible(
                 fit: FlexFit.tight,
                 child: StreamBuilder(
@@ -234,10 +320,8 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
         padding: const EdgeInsets.all(5.0),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(
-              color: Colors.lightBlue,
-            ),
+            //color: Colors.white,
+
             borderRadius: BorderRadius.circular(10.0),
           ),
           child: Row(
@@ -264,9 +348,34 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                       Container(
 
                           child: Form(key: _formKey, child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
 
                             children: [
+
+                              FutureBuilder<String>(
+                                  future: usuario_provider.recuperaImagen(datosuser.email),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData) {
+                                      return FutureBuilder(future: usuario_provider.getImagen(snapshot.data.toString()),
+                                          builder: (context, snapshot2) {
+                                            if(snapshot2.hasData){
+                                              return CircleAvatar( radius: 50.0,
+                                                  backgroundColor: Colors.transparent,
+                                                  backgroundImage:(NetworkImage(snapshot2.data.toString(),
+
+                                                  )));
+                                            }
+                                            else {
+                                              return CircularProgressIndicator();
+                                            }
+                                          });
+
+                                    }
+                                    else {
+                                      return CircularProgressIndicator();
+                                    }
+                                  }
+                              ),
                               TextFormField(
                                   initialValue:
                                   usuario.Nombre = solicitud.get('Nombre'),
@@ -282,6 +391,8 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                                     }
                                     return null;
                                   }
+                              ),Padding(
+                                  padding: const EdgeInsets.all(10.0)
                               ),
                               TextFormField(
                                   initialValue:
@@ -299,6 +410,8 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                                     }
                                     return null;
                                   }
+                              ),Padding(
+                                  padding: const EdgeInsets.all(10.0)
                               ),
                               TextFormField(
                                   initialValue:
@@ -309,7 +422,7 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                                   decoration: InputDecoration(
                                     icon: Icon(Icons.roofing),
 
-                                    labelText: "Población",
+                                    labelText: "Provincia",
                                   ),
                                   validator: (value) {
                                     if (value.isEmpty) {
@@ -318,13 +431,15 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                                     return null;
                                   }
                               ),
-
+                              Padding(
+                                  padding: const EdgeInsets.all(10.0)
+                              ),
                               TextFormField(
                                   initialValue:
                                   usuario.NUser = solicitud.get('NUser'),
                                   onChanged: (value) => usuario.NUser = value,
                                   decoration: InputDecoration(
-                                    icon: Icon(Icons.room),
+                                    icon: Icon(Icons.person_pin_circle_rounded),
 
                                     labelText: "Nombre de Usuario",
                                   ),
@@ -335,14 +450,16 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                                     return null;
                                   }
                               ),
-
+                              Padding(
+                                  padding: const EdgeInsets.all(10.0)
+                              ),
                               TextFormField(
                                   initialValue: usuario.DNI =
                                       solicitud.get('DNI'),
                                   onChanged: (value) =>
                                   usuario.DNI = value,
                                   decoration: InputDecoration(
-                                    icon: Icon(Icons.description),
+                                    icon: Icon(Icons.article_rounded),
                                     labelText: "DNI",
                                   ),
                                   validator: (value) {
@@ -353,7 +470,7 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
                                   }
                               ),
                               Padding(
-                                  padding: const EdgeInsets.all(6.0)
+                                  padding: const EdgeInsets.all(14.0)
                               ),
                               Row(
                                 children: [
@@ -447,10 +564,34 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
       _refresh();
     });
   }
-  void _navigateHome(){
+  void _navigateMisSolicitudes(){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
-      builder: (context) => HomePage(),
+      builder: (context) => MisSolicitudes(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateChat(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => ChatList(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateAviso(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => Aviso(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateRanking(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => RankingPage(),
     )).then( (var value) {
       _refresh();
     });
@@ -463,6 +604,21 @@ class _MiPerfilPageState extends State<MiPerfilPage> {
       _refresh();
     });
   }
+
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushNamed(context, 'login');
+
+  }
+  void _navigateHome(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => HomePage(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+
   void _submit() {
     //Navigator.of(context).pop();
 

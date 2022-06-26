@@ -1,36 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tfgflutter/src/editaranuncio.dart';
 import 'package:tfgflutter/src/mianuncio.dart';
 import 'package:tfgflutter/src/provider/solicitud_provider.dart';
 import 'package:tfgflutter/src/provider/user_provider.dart';
+import 'package:tfgflutter/src/ranking.dart';
 import 'package:tfgflutter/src/solicitud.dart';
 import 'dart:async';
+import 'avisolegal.dart';
 import 'chat.dart';
 import 'controller/userdata.dart' as ud;
+import 'controller/userdata.dart';
 import 'home.dart';
+import 'miperfil.dart';
+import 'mis_solicitudes.dart';
 import 'misanuncios.dart';
 
 
 
-class ChatList extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
 
-        primarySwatch: Colors.blue,
-      ),
-      home: ChatListPage(title: 'Tablón de Anuncios'),
-    );
-  }
-}
 
-class ChatListPage extends StatefulWidget {
-  ChatListPage({Key key, this.title}) : super(key: key);
+class ChatList extends StatefulWidget {
+  ChatList({Key key, this.title}) : super(key: key);
 
   final String title;
   Timer _timer;
@@ -40,7 +33,7 @@ class ChatListPage extends StatefulWidget {
   _ChatListPageState createState() => _ChatListPageState();
 }
 
-class _ChatListPageState extends State<ChatListPage> {
+class _ChatListPageState extends State<ChatList> {
   Solicitud_Provider solicitud_provider= new Solicitud_Provider();
   Icon customIcon = const Icon(Icons.search);
   Widget customSearchBar = const Text('Mis Chats');
@@ -89,6 +82,7 @@ class _ChatListPageState extends State<ChatListPage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return Scaffold(
+      backgroundColor: Colors.grey,
 
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
@@ -99,29 +93,58 @@ class _ChatListPageState extends State<ChatListPage> {
       ),
 
       drawer: Drawer(
-        child: ListView(
+        child:ListView(
           // Remove padding
-          padding: EdgeInsets.zero,
+
           children: [
             UserAccountsDrawerHeader(
-              accountName: Text('Oflutter.com'),
-              accountEmail: Text('example@gmail.com'),
-              currentAccountPicture: CircleAvatar(
-                child: ClipOval(
-                  child: Image.network(
-                    'https://e1.pngegg.com/pngimages/976/873/png-clipart-orb-os-x-icon-man-s-profile-icon-inside-white-circle.png',
-                    fit: BoxFit.cover,
-                    width: 90,
-                    height: 90,
-                  ),
-                ),
+              currentAccountPicture:FutureBuilder<String>(
+                  future: upro.recuperaImagen(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return FutureBuilder(future: upro.getImagen(snapshot.data.toString()),
+                          builder: (context, snapshot2) {
+                            if(snapshot2.hasData){
+                              return CircleAvatar( radius: 10.0,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage:(NetworkImage(snapshot2.data.toString(),
+
+                                  )));
+                            }
+                            else {
+                              return CircularProgressIndicator();
+                            }
+                          });
+
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
               ),
+
+              accountName: FutureBuilder<String>(
+                  future: upro.recuperaNombre(datosuser.email),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return Text("Bienvenido "+ snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                    }
+                    else {
+                      return CircularProgressIndicator();
+                    }
+                  }
+              ),
+              accountEmail: Text(datosuser.email),
+
               decoration: BoxDecoration(
-                color: Colors.blue,
-                image: DecorationImage(
-                    fit: BoxFit.fill,
-                    image: NetworkImage(
-                        'https://oflutter.com/wp-content/uploads/2021/02/profile-bg3.jpg')),
+
+                  gradient:  LinearGradient(colors: <Color>[
+                    //Color.fromRGBO(29, 23, 91, 1.0),
+                    Colors.blue,
+                    Colors.blueGrey,
+
+                  ])
+
               ),
             ),
             ListTile(
@@ -135,31 +158,56 @@ class _ChatListPageState extends State<ChatListPage> {
               onTap: () => _navigateMisAnuncios(),
             ),
             ListTile(
-              leading: Icon(Icons.share),
+              leading: Icon(Icons.request_page),
               title: Text('Mis Solicitudes'),
-              onTap: () => null,
+              onTap: () => _navigateMisSolicitudes(),
             ),
             ListTile(
-              leading: Icon(Icons.notifications),
+              leading: Icon(Icons.chat),
               title: Text('Chats'),
+              onTap: () => _navigateChat(),
             ),
-            Divider(),
+
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Mi Perfil'),
-              onTap: () => null,
+              onTap: () => _navigateMiPerfil(),
             ),
             ListTile(
               leading: Icon(Icons.description),
               title: Text('Ránking'),
-              onTap: () => null,
+              onTap: () => _navigateRanking(),
+            ),
+            ListTile(
+              title: Text('Aviso Legal'),
+              leading: Icon(Icons.help),
+              onTap: () => _navigateAviso(),
             ),
             Divider(),
             ListTile(
-              title: Text('Cerrar Sesión'),
-              leading: Icon(Icons.exit_to_app),
-              onTap: () => null,
+                title: Text('Cerrar Sesión'),
+                leading: Icon(Icons.exit_to_app),
+                onTap: () {
+                  final _prefs = new DataUser();
+                  // _timer.cancel();
+                  _prefs.token = '';
+                  _prefs.email = '';
+                  _prefs.refreshtoken = '';
+                  _prefs.name='';
+                  _prefs.nuser='';
+                  _prefs.puntos=0;
+
+
+
+                  _signOut();
+
+                  //_navigateLogin();
+
+                }
+
             ),
+
+
           ],
         ),
       ),
@@ -173,6 +221,47 @@ class _ChatListPageState extends State<ChatListPage> {
         // in the middle of the parent.
         child: Column(
             children: <Widget>[
+              Container(
+                alignment: Alignment.topRight,
+                child:  AppBar(
+                  toolbarHeight: 30,
+                  backgroundColor: Colors.blueGrey,
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    Container( decoration: BoxDecoration(
+                      //color: Colors.black12, //puntitos
+                    ),
+                      child:
+                      Row(
+
+                        children: [
+                          Padding(padding: const EdgeInsets.all(2.0),
+                          ),
+
+                          //Text(datosuser.puntos.toString(),style: TextStyle(fontSize: 16),),
+                          FutureBuilder(
+                              future: upro.recuperaPuntos2(datosuser.email),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData) {
+                                  return Text(snapshot.data.toString(),style: TextStyle(fontSize: 16),);
+                                }
+                                else {
+                                  return CircularProgressIndicator();
+                                }
+                              }
+                          ),
+
+                          Icon(Icons.monetization_on),
+                        ],
+                      ),
+                    ),
+
+
+                  ],
+
+                ),
+              ),
+              Padding(padding: EdgeInsets.all(4)),
               Flexible(
                 fit: FlexFit.tight,
                 child: StreamBuilder(
@@ -214,11 +303,7 @@ class _ChatListPageState extends State<ChatListPage> {
 
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+
     );
 
 
@@ -336,7 +421,52 @@ class _ChatListPageState extends State<ChatListPage> {
     //selectedReportListPreferencias.clear();
     //Navigator.of(context).pop();
   }
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    Navigator.pushNamed(context, 'login');
 
+  }
+  void _navigateChat(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => ChatList(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateAviso(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => Aviso(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateRanking(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => RankingPage(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+  void _navigateMiPerfil(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => PerfilPage(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
+
+  void _navigateMisSolicitudes(){
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(
+      builder: (context) => MisSolicitudes(),
+    )).then( (var value) {
+      _refresh();
+    });
+  }
   void _navigateMisAnuncios(){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
@@ -357,7 +487,7 @@ class _ChatListPageState extends State<ChatListPage> {
   void _navigateDetallesAnuncio(String email){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
-      builder: (context) => MiEditarPage(email),
+      builder: (context) => EditarPage(email),
     )).then( (var value) {
       _refresh();
     });
@@ -371,10 +501,12 @@ class _ChatListPageState extends State<ChatListPage> {
       _refresh();
     });
   }
+
+
   void _navigateDetallesMiAnuncio(String email){
     Navigator.of(context)
         .push(MaterialPageRoute<void>(
-      builder: (context) => MyMiAnuncio(email),
+      builder: (context) => MiAnuncio(email),
     )).then( (var value) {
       _refresh();
     });

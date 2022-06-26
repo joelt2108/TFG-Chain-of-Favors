@@ -43,6 +43,29 @@ class DataUser{
     prefs.setString('name', value);
   }
 
+  get nuser {
+    return prefs.getString('NUser') ?? '';
+    // return prefs.getString('token') ?? '';
+  }
+
+
+
+
+  set nuser(String value) {
+    prefs.setString('NUser', value);
+  }
+
+  get puntos {
+    return prefs.getInt('Puntos') ?? '';
+    // return prefs.getString('token') ?? '';
+  }
+
+
+
+
+  set puntos(int value) {
+    prefs.setInt('Puntos', value);
+  }
   get getrefreshtoken {
     return prefs.getString('refreshtoken') ?? '';
     // return prefs.getString('token') ?? '';
